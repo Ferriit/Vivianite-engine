@@ -20,9 +20,9 @@ namespace vivianite {
         GLuint frag, vert, program;
     };
 
-    struct Vertex {
-        float x, y, z;
-        float r, g, b;
+    struct mesh {
+        std::vector<float> vertices;
+        size_t vertex_count;
     };
 
     class renderer {
@@ -119,7 +119,7 @@ namespace vivianite {
                 glLinkProgram(this->program.program);
             }
 
-            GLuint upload_mesh(std::vector<Vertex> mesh) {
+            GLuint upload_mesh(std::vector<float> mesh) {
                 GLuint vao;
                 GLuint vbo;
 
@@ -129,7 +129,7 @@ namespace vivianite {
                 glBindVertexArray(vao);
                 glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
-                glBufferData(GL_ARRAY_BUFFER, mesh.size() * sizeof(Vertex), mesh.data(), GL_STATIC_DRAW);
+                glBufferData(GL_ARRAY_BUFFER, mesh.size() * sizeof(float), mesh.data(), GL_STATIC_DRAW);
 
                 // Position
                 glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
@@ -163,8 +163,6 @@ namespace vivianite {
                 glfwGetFramebufferSize(window, &width, &height);
                 glViewport(0, 0, width, height);
 
-                glUseProgram(this->program.program);
-
                 glfwSwapInterval(this->vsync);
 
                 return true;
@@ -182,6 +180,8 @@ namespace vivianite {
                 double last = glfwGetTime();
 
                 while (!glfwWindowShouldClose(window)) {
+                    glUseProgram(this->program.program);
+
                     double now = glfwGetTime();
                     this->delta_time = now - last;
                     last = now;
@@ -190,6 +190,8 @@ namespace vivianite {
 
                     glfwPollEvents();
                     glfwSwapBuffers(window);
+
+                    glBindVertexArray(0);
                 }
             }
 

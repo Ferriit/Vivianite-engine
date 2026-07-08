@@ -10,7 +10,7 @@
 #include <iostream>
 
 namespace vivianite {
-    std::vector<Vertex> load_obj(const char* filename) {
+    mesh load_obj(const char* filename) {
         std::ifstream file(filename);
 
         if (!file.is_open()) {
@@ -43,13 +43,23 @@ namespace vivianite {
             else if (line.rfind("f ", 0) == 0) {
                 std::stringstream ss(line.substr(2));
 
-                int a, b, c;
-                char slash;
+                std::array<int, 3> face;
 
-                // Supports: f 1/1/1 2/2/2 3/3/3
-                ss >> a >> slash >> slash >> b >> slash >> slash >> c;
+                for (int i = 0; i < 3; i++) {
+                    std::string vertex;
+                    ss >> vertex;
 
-                faces.push_back({a - 1, b - 1, c - 1});
+                    // Extract the vertex index before the first '/'
+                    size_t slash = vertex.find('/');
+
+                    if (slash != std::string::npos) {
+                        vertex = vertex.substr(0, slash);
+                    }
+
+                    face[i] = std::stoi(vertex) - 1;
+                }
+
+                faces.push_back(face);
             }
         }
 
@@ -84,11 +94,10 @@ namespace vivianite {
 
 
         // Expand triangles into a VAO-friendly vertex array
-        std::vector<Vertex> vertices;
-        vertices.reserve(faces.size() * 3);
+        std::vector<float> vertices;
+        vertices.reserve(faces.size() * 3 * 6);
 
         for (auto& face : faces) {
-
             for (int index : face) {
 
                 float x = x_list[index];
@@ -104,20 +113,30 @@ namespace vivianite {
                 y -= cy;
                 z -= cz;
 
-                vertices.push_back({
-                    x, y, z,
-                    r, g, b
-                });
+                vertices.push_back(x);
+                vertices.push_back(y);
+                vertices.push_back(z);
+
+                vertices.push_back(r);
+                vertices.push_back(g);
+                vertices.push_back(b);
             }
         }
 
-        return vertices;
+
+        return mesh{std::move(vertices), vertices.size() / 6};
     }
 };
 
 int frames = 0;
 
 void setup(vivianite::renderer* ctx) {
+    vivianite::mesh cube_obj = vivianite::load_obj("assets/cube.obj");
+    GLuint cube = ctx->upload_mesh(cube_obj.vertices);
+
+    glBindVertexArray(cube);
+    glDrawArrays(GL_TRIANGLES, 0, cube_obj.vertex_count);
+
     ctx->vsync = VIVIANITE_VSYNC_TRUE;
     ctx->apply_settings();
     printf("SETUP\n");
@@ -148,6 +167,7 @@ int main() {
     r_ctx.program.vert_path = "assets/vert.glsl";
 
     r_ctx.create_shaders();
+
     
     r_ctx.setup_func = setup;
     r_ctx.update_func = update;
