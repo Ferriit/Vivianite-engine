@@ -4,14 +4,18 @@
 int frames = 0;
 
 void setup(vivianite::renderer* ctx) {
-    frames = 0;
+    ctx->vsync = VIVIANITE_VSYNC_TRUE;
+    ctx->apply_settings();
     printf("SETUP\n");
 }
 
 void update(vivianite::renderer* ctx) {
+    glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
     frames++;
 
-    if (frames >= 100) {
+    if (frames >= 120) {
         printf("%fFPS\n", 1 / ctx->delta_time);
         ctx->exit();
     }

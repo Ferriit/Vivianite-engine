@@ -17,7 +17,7 @@ namespace vivianite {
     struct shader {
         std::string frag_path, vert_path;
         std::string frag_raw, vert_raw;
-        GLuint frag, vert;
+        GLuint frag, vert, program;
     };
 
     class renderer {
@@ -98,11 +98,20 @@ namespace vivianite {
                 const char* frag_src = this->program.frag_raw.c_str();
                 const char* vert_src = this->program.vert_raw.c_str();
 
+                // TODO: Add proper error checking
+
                 glShaderSource(this->program.frag, 1, &frag_src, nullptr);
                 glShaderSource(this->program.vert, 1, &vert_src, nullptr);
 
                 glCompileShader(this->program.frag);
                 glCompileShader(this->program.vert);
+
+                this->program.program = glCreateProgram();
+
+                glAttachShader(this->program.program, this->program.vert);
+                glAttachShader(this->program.program, this->program.frag);
+
+                glLinkProgram(this->program.program);
             }
 
             bool initialize() {
@@ -126,9 +135,17 @@ namespace vivianite {
                 glfwGetFramebufferSize(window, &width, &height);
                 glViewport(0, 0, width, height);
 
+                glUseProgram(this->program.program);
+
                 glfwSwapInterval(this->vsync);
 
                 return true;
+            }
+
+            void apply_settings() {
+                glfwSetWindowTitle(window, this->title);
+                glfwSetWindowSize(window, this->width, this->height);
+                glfwSwapInterval(this->vsync);
             }
 
             void run() {
@@ -153,6 +170,9 @@ namespace vivianite {
             }
 
             ~renderer() {
+                glDeleteShader(this->program.frag);
+                glDeleteShader(this->program.vert);
+
                 if (window) {
                     glfwDestroyWindow(window);
                 }
