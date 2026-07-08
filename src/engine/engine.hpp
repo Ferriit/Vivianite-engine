@@ -1,4 +1,21 @@
 #include "renderer.hpp"
+#include <iostream>
+
+int frames = 0;
+
+void setup(vivianite::renderer* ctx) {
+    frames = 0;
+    printf("SETUP\n");
+}
+
+void update(vivianite::renderer* ctx) {
+    frames++;
+
+    if (frames >= 100) {
+        printf("%fFPS\n", 1 / ctx->delta_time);
+        ctx->exit();
+    }
+}
 
 namespace vivianite {
     static inline int start() {
@@ -9,6 +26,11 @@ namespace vivianite {
         }
 
         r_ctx.initialize();
+
+        r_ctx.setup_func = setup;
+        r_ctx.update_func = update;
+
+        r_ctx.run();
 
         return 0;
     }
