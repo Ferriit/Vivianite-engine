@@ -27,6 +27,11 @@ namespace vivianite {
 
         r_ctx.initialize();
 
+        r_ctx.program.frag_path = "assets/frag.glsl";
+        r_ctx.program.vert_path = "assets/vert.glsl";
+
+        r_ctx.create_shaders();
+        
         r_ctx.setup_func = setup;
         r_ctx.update_func = update;
 

@@ -5,12 +5,21 @@
 #include <glm/glm.hpp>
 
 #include <iostream>
+#include <fstream>
+#include <string>
+#include <cstdio>
 
 #define VIVIANITE_VSYNC_TRUE 1
 #define VIVIANITE_VSYNC_FALSE 0
 #define VIVIANITE_VSYNC_HALF 2
 
 namespace vivianite {
+    struct shader {
+        std::string frag_path, vert_path;
+        std::string frag_raw, vert_raw;
+        GLuint frag, vert;
+    };
+
     class renderer {
         public:
             int width = 800;
@@ -25,6 +34,7 @@ namespace vivianite {
             bool init_status = true;
 
             GLFWwindow* window;
+            shader program;
 
             int gl_major_version = 4;
             int gl_minor_version = 6;
@@ -47,6 +57,54 @@ namespace vivianite {
                 glfwSetErrorCallback(this->error_callback);
             }
 
+            bool read_shaders() {
+                // Frag
+                std::ifstream frag_file(this->program.frag_path);
+
+                if (!frag_file.is_open()) {
+                    return false;
+                }
+
+                this->program.frag_raw = std::string(
+                    (std::istreambuf_iterator<char>(frag_file)),
+                    std::istreambuf_iterator<char>()
+                );
+
+                frag_file.close();
+
+                // Vert
+                std::ifstream vert_file(this->program.vert_path);
+
+                if (!vert_file.is_open()) {
+                    return false;
+                }
+
+                this->program.vert_raw = std::string(
+                    (std::istreambuf_iterator<char>(vert_file)),
+                    std::istreambuf_iterator<char>()
+                );
+
+                vert_file.close();
+
+                return true;
+            }
+
+            void create_shaders() {
+                read_shaders(); // Populates frag_raw and vert_raw
+
+                this->program.frag = glCreateShader(GL_FRAGMENT_SHADER);
+                this->program.vert = glCreateShader(GL_VERTEX_SHADER);
+
+                const char* frag_src = this->program.frag_raw.c_str();
+                const char* vert_src = this->program.vert_raw.c_str();
+
+                glShaderSource(this->program.frag, 1, &frag_src, nullptr);
+                glShaderSource(this->program.vert, 1, &vert_src, nullptr);
+
+                glCompileShader(this->program.frag);
+                glCompileShader(this->program.vert);
+            }
+
             bool initialize() {
                 // OpenGL 4.6 CORE
                 glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, this->gl_major_version);
@@ -64,6 +122,9 @@ namespace vivianite {
                 
                 // GLAD init
                 gladLoadGL(glfwGetProcAddress);
+
+                glfwGetFramebufferSize(window, &width, &height);
+                glViewport(0, 0, width, height);
 
                 glfwSwapInterval(this->vsync);
 
