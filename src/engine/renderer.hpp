@@ -10,7 +10,7 @@
 #include <iostream>
 
 namespace vivianite {
-    class engine {
+    class renderer {
         public:
             int width = 800;
             int height = 600;
@@ -30,7 +30,7 @@ namespace vivianite {
                 fprintf(stderr, "Error: %s\n", description);
             }
 
-            engine() {
+            renderer() {
                 // GLFW
                 if (!glfwInit()) {
                     this->init_status = false;
@@ -59,7 +59,7 @@ namespace vivianite {
                 return true;
             }
 
-            ~engine() {
+            ~renderer() {
                 glfwDestroyWindow(window);
                 glfwTerminate();
             }
