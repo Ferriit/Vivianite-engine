@@ -20,6 +20,11 @@ namespace vivianite {
         GLuint frag, vert, program;
     };
 
+    struct Vertex {
+        float x, y, z;
+        float r, g, b;
+    };
+
     class renderer {
         public:
             int width = 800;
@@ -112,6 +117,29 @@ namespace vivianite {
                 glAttachShader(this->program.program, this->program.frag);
 
                 glLinkProgram(this->program.program);
+            }
+
+            GLuint upload_mesh(std::vector<Vertex> mesh) {
+                GLuint vao;
+                GLuint vbo;
+
+                glGenVertexArrays(1, &vao);
+                glGenBuffers(1, &vbo);
+
+                glBindVertexArray(vao);
+                glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+                glBufferData(GL_ARRAY_BUFFER, mesh.size() * sizeof(Vertex), mesh.data(), GL_STATIC_DRAW);
+
+                // Position
+                glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+                glEnableVertexAttribArray(0);
+                
+                // Color
+                glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+                glEnableVertexAttribArray(1);
+
+                return vao;
             }
 
             bool initialize() {

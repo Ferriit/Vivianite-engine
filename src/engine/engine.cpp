@@ -10,13 +10,7 @@
 #include <iostream>
 
 namespace vivianite {
-    struct Vertex {
-        float x, y, z;
-        float r, g, b;
-    };
-
-    std::vector<Vertex> load_obj(const char* filename)
-    {
+    std::vector<Vertex> load_obj(const char* filename) {
         std::ifstream file(filename);
 
         if (!file.is_open()) {
