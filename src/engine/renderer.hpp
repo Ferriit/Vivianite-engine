@@ -9,8 +9,6 @@
 
 #include <iostream>
 
-
-
 namespace vivianite {
     class engine {
         public:
@@ -24,6 +22,9 @@ namespace vivianite {
             bool init_status = true;
 
             GLFWwindow* window;
+
+            int gl_major_version = 4;
+            int gl_minor_version = 6;
 
             static void error_callback(int error, const char* description) {
                 fprintf(stderr, "Error: %s\n", description);
@@ -39,9 +40,9 @@ namespace vivianite {
             }
 
             bool initialize() {
-                // OpenGL 3.3 CORE
-                glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-                glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+                // OpenGL 4.6 CORE
+                glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, this->gl_major_version);
+                glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, this->gl_minor_version);
                 glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
                 // GLFW window
