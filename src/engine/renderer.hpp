@@ -117,17 +117,12 @@ namespace vivianite {
 
                 // Check if it compiled correctly
                 GLint isCompiled = 0;
+                char infoLog[512];
                 glGetShaderiv(this->program.frag, GL_COMPILE_STATUS, &isCompiled);
                 if(isCompiled == GL_FALSE) {
-                    GLint maxLength = 0;
-                    glGetShaderiv(this->program.frag, GL_INFO_LOG_LENGTH, &maxLength);
+                    glGetShaderInfoLog(this->program.frag, 512, nullptr, infoLog);
+                    std::cout << "Fragment shader error:\n" << infoLog << "\n";
 
-                    // The maxLength includes the NULL character
-                    std::vector<GLchar> errorLog(maxLength);
-                    glGetShaderInfoLog(this->program.frag, maxLength, &maxLength, &errorLog[0]);
-
-                    // Provide the infolog in whatever manor you deem best.
-                    // Exit with failure.
                     glDeleteShader(this->program.frag); // Don't leak the shader.
                     return;
                 }
@@ -139,16 +134,10 @@ namespace vivianite {
                 isCompiled = 0;
                 glGetShaderiv(this->program.vert, GL_COMPILE_STATUS, &isCompiled);
                 if(isCompiled == GL_FALSE) {
-                    GLint maxLength = 0;
-                    glGetShaderiv(this->program.vert, GL_INFO_LOG_LENGTH, &maxLength);
+                    glGetShaderInfoLog(this->program.vert, 512, nullptr, infoLog);
+                    std::cout << "Vertex shader error:\n" << infoLog << "\n";
 
-                    // The maxLength includes the NULL character
-                    std::vector<GLchar> errorLog(maxLength);
-                    glGetShaderInfoLog(this->program.vert, maxLength, &maxLength, &errorLog[0]);
-
-                    // Provide the infolog in whatever manor you deem best.
-                    // Exit with failure.
-                    glDeleteShader(this->program.vert); // Don't leak the shader.
+                    glDeleteShader(this->program.frag); // Don't leak the shader.
                     return;
                 }
 
@@ -160,7 +149,7 @@ namespace vivianite {
                 glLinkProgram(this->program.program);
             }
 
-            GLuint upload_mesh(std::vector<float> mesh) {
+            GLuint upload_mesh(const std::vector<float> &mesh) {
                 GLuint vao;
                 GLuint vbo;
 
@@ -200,6 +189,9 @@ namespace vivianite {
                 
                 // GLAD init
                 gladLoadGL(glfwGetProcAddress);
+
+                glEnable(GL_DEPTH_TEST);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
                 glfwGetFramebufferSize(window, &width, &height);
                 glViewport(0, 0, width, height);
