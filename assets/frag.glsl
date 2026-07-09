@@ -1,8 +1,9 @@
 #version 460 core
 
+in vec3 vertexColor;
+
 out vec4 FragColor;
-in vec4 gl_FragCoord;
 
 void main() {
-    FragColor = vec4(gl_FragCoord, 0., 0.);
+    FragColor = vec4(vertexColor, 1.0);
 }

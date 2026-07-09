@@ -112,8 +112,45 @@ namespace vivianite {
                 glShaderSource(this->program.frag, 1, &frag_src, nullptr);
                 glShaderSource(this->program.vert, 1, &vert_src, nullptr);
 
+                // Compile fragment shader
                 glCompileShader(this->program.frag);
+
+                // Check if it compiled correctly
+                GLint isCompiled = 0;
+                glGetShaderiv(this->program.frag, GL_COMPILE_STATUS, &isCompiled);
+                if(isCompiled == GL_FALSE) {
+                    GLint maxLength = 0;
+                    glGetShaderiv(this->program.frag, GL_INFO_LOG_LENGTH, &maxLength);
+
+                    // The maxLength includes the NULL character
+                    std::vector<GLchar> errorLog(maxLength);
+                    glGetShaderInfoLog(this->program.frag, maxLength, &maxLength, &errorLog[0]);
+
+                    // Provide the infolog in whatever manor you deem best.
+                    // Exit with failure.
+                    glDeleteShader(this->program.frag); // Don't leak the shader.
+                    return;
+                }
+
+                // Compile vertex shader
                 glCompileShader(this->program.vert);
+
+                // Check if it compiled correctly
+                isCompiled = 0;
+                glGetShaderiv(this->program.vert, GL_COMPILE_STATUS, &isCompiled);
+                if(isCompiled == GL_FALSE) {
+                    GLint maxLength = 0;
+                    glGetShaderiv(this->program.vert, GL_INFO_LOG_LENGTH, &maxLength);
+
+                    // The maxLength includes the NULL character
+                    std::vector<GLchar> errorLog(maxLength);
+                    glGetShaderInfoLog(this->program.vert, maxLength, &maxLength, &errorLog[0]);
+
+                    // Provide the infolog in whatever manor you deem best.
+                    // Exit with failure.
+                    glDeleteShader(this->program.vert); // Don't leak the shader.
+                    return;
+                }
 
                 this->program.program = glCreateProgram();
 
