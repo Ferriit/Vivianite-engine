@@ -124,7 +124,7 @@ namespace vivianite {
         }
 
 
-        return mesh{std::move(vertices), vertices.size() / 6};
+        return mesh{std::move(vertices), 0, vertices.size() / 6};
     }
 };
 
@@ -134,8 +134,9 @@ void setup(vivianite::renderer* ctx) {
     vivianite::mesh cube_obj = vivianite::load_obj("assets/cube.obj");
     GLuint cube = ctx->upload_mesh(cube_obj.vertices);
 
-    glBindVertexArray(cube);
-    glDrawArrays(GL_TRIANGLES, 0, cube_obj.vertex_count);
+    cube_obj.vao = cube;
+
+    ctx->render_queue.push_back(cube_obj);
 
     ctx->vsync = VIVIANITE_VSYNC_TRUE;
     ctx->apply_settings();
@@ -167,7 +168,6 @@ int main() {
     r_ctx.program.vert_path = "assets/vert.glsl";
 
     r_ctx.create_shaders();
-
     
     r_ctx.setup_func = setup;
     r_ctx.update_func = update;

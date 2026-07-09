@@ -22,6 +22,7 @@ namespace vivianite {
 
     struct mesh {
         std::vector<float> vertices;
+        GLuint vao;
         size_t vertex_count;
     };
 
@@ -46,6 +47,9 @@ namespace vivianite {
 
             void (*update_func)(vivianite::renderer*);
             void (*setup_func)(vivianite::renderer*);
+
+            std::vector<mesh> render_queue = {};
+
 
             double delta_time;
 
@@ -187,6 +191,11 @@ namespace vivianite {
                     last = now;
 
                     update_func(this);
+
+                    for (mesh obj: this->render_queue) {
+                        glBindVertexArray(obj.vao);
+                        glDrawArrays(GL_TRIANGLES, 0, obj.vertex_count);
+                    }
 
                     glfwPollEvents();
                     glfwSwapBuffers(window);
