@@ -124,7 +124,13 @@ namespace vivianite {
         }
 
 
-        return mesh{std::move(vertices), 0, vertices.size() / 6};
+        size_t vertex_count = vertices.size() / 6;
+
+        return mesh{
+            std::move(vertices),
+            0,
+            vertex_count
+        };
     }
 };
 
@@ -136,7 +142,9 @@ void setup(vivianite::renderer* ctx) {
 
     cube_obj.vao = cube;
 
-    ctx->render_queue.push_back(cube_obj);
+    vivianite::model cube_model = {.obj=cube_obj, .position=glm::vec3(0.0f, 0.0f, 0.0f)};
+
+    ctx->render_queue.push_back(cube_model);
 
     ctx->vsync = VIVIANITE_VSYNC_TRUE;
     ctx->apply_settings();
@@ -149,10 +157,10 @@ void update(vivianite::renderer* ctx) {
 
     frames++;
 
-    if (frames >= 120) {
-        printf("%fFPS\n", 1 / ctx->delta_time);
-        ctx->exit();
-    }
+    //if (frames >= 120) {
+    //    printf("%fFPS\n", 1 / ctx->delta_time);
+    //    ctx->exit();
+    //}
 }
 
 int main() {

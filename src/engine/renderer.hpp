@@ -3,6 +3,7 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <iostream>
 #include <fstream>
@@ -26,6 +27,11 @@ namespace vivianite {
         size_t vertex_count;
     };
 
+    struct model {
+        mesh obj;
+        glm::vec3 position;
+    };
+
     class renderer {
         public:
             int width = 800;
@@ -35,7 +41,7 @@ namespace vivianite {
 
             const char* title = "Vivianite Window";
 
-            int FOV = 90;
+            float FOV = 90;
 
             bool init_status = true;
 
@@ -48,8 +54,10 @@ namespace vivianite {
             void (*update_func)(vivianite::renderer*);
             void (*setup_func)(vivianite::renderer*);
 
-            std::vector<mesh> render_queue = {};
+            std::vector<model> render_queue = {};
 
+            glm::vec3 camera_pos = glm::vec3(0.0f, 0.0f, 5.0f);
+            glm::mat4 projection;
 
             double delta_time;
 
@@ -58,12 +66,18 @@ namespace vivianite {
             }
 
             renderer() {
-                // GLFW
                 if (!glfwInit()) {
                     this->init_status = false;
                     return;
                 }
                 glfwSetErrorCallback(this->error_callback);
+
+                this->projection = glm::perspective(
+                    glm::radians(this->FOV),
+                    (float)this->width / (float)this->height,
+                    0.1f,
+                    100.0f
+                );
             }
 
             bool read_shaders() {
@@ -193,6 +207,8 @@ namespace vivianite {
                 glEnable(GL_DEPTH_TEST);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+                glDisable(GL_CULL_FACE);
+
                 glfwGetFramebufferSize(window, &width, &height);
                 glViewport(0, 0, width, height);
 
@@ -205,10 +221,26 @@ namespace vivianite {
                 glfwSetWindowTitle(window, this->title);
                 glfwSetWindowSize(window, this->width, this->height);
                 glfwSwapInterval(this->vsync);
+
+                glUniformMatrix4fv(
+                    glGetUniformLocation(this->program.program, "projection"),
+                    1,
+                    GL_FALSE,
+                    glm::value_ptr(this->projection)
+                );
             }
 
             void run() {
                 this->setup_func(this);
+
+                glUseProgram(this->program.program);
+
+                glUniformMatrix4fv(
+                    glGetUniformLocation(this->program.program, "projection"),
+                    1,
+                    GL_FALSE,
+                    glm::value_ptr(this->projection)
+                );
 
                 double last = glfwGetTime();
 
@@ -221,15 +253,38 @@ namespace vivianite {
 
                     update_func(this);
 
-                    for (mesh obj: this->render_queue) {
-                        glBindVertexArray(obj.vao);
-                        glDrawArrays(GL_TRIANGLES, 0, obj.vertex_count);
+                    glm::mat4 view = glm::translate(
+                        glm::mat4(1.0f),
+                        -this->camera_pos
+                    );
+
+                    glUniformMatrix4fv(
+                        glGetUniformLocation(this->program.program, "view"),
+                        1,
+                        GL_FALSE,
+                        glm::value_ptr(view)
+                    );
+
+                    for (model obj : this->render_queue) {
+                        glBindVertexArray(obj.obj.vao);
+
+                        glm::mat4 modelMat = glm::translate(
+                            glm::mat4(1.0f),
+                            obj.position
+                        );
+
+                        glUniformMatrix4fv(
+                            glGetUniformLocation(this->program.program, "model"),
+                            1,
+                            GL_FALSE,
+                            glm::value_ptr(modelMat)
+                        );
+
+                        glDrawArrays(GL_TRIANGLES, 0, obj.obj.vertex_count);
                     }
 
                     glfwPollEvents();
                     glfwSwapBuffers(window);
-
-                    glBindVertexArray(0);
                 }
             }
 
