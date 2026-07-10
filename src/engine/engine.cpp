@@ -134,8 +134,6 @@ namespace vivianite {
     }
 };
 
-int frames = 0;
-
 void setup(vivianite::renderer* ctx) {
     vivianite::mesh cube_obj = vivianite::load_obj("assets/cube.obj");
     GLuint cube = ctx->upload_mesh(cube_obj.vertices);
@@ -154,13 +152,10 @@ void setup(vivianite::renderer* ctx) {
 void update(vivianite::renderer* ctx) {
     glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
 
-    frames++;
-
-    //if (frames >= 120) {
-    //    printf("%fFPS\n", 1 / ctx->delta_time);
-    //    ctx->exit();
-    //}
+void exit(vivianite::renderer* ctx) {
+    printf("%f FPS (%f ms)\n", 1 / ctx->delta_time, ctx->delta_time * 1000.0f);
 }
 
 int main() {
@@ -179,6 +174,7 @@ int main() {
     
     r_ctx.setup_func = setup;
     r_ctx.update_func = update;
+    r_ctx.exit_func = exit;
 
     r_ctx.run();
 

@@ -53,6 +53,7 @@ namespace vivianite {
 
             void (*update_func)(vivianite::renderer*);
             void (*setup_func)(vivianite::renderer*);
+            void (*exit_func)(vivianite::renderer*);
 
             std::vector<model> render_queue = {};
 
@@ -251,7 +252,7 @@ namespace vivianite {
                     this->delta_time = now - last;
                     last = now;
 
-                    update_func(this);
+                    this->update_func(this);
 
                     glm::mat4 view = glm::translate(
                         glm::mat4(1.0f),
@@ -289,10 +290,13 @@ namespace vivianite {
             }
 
             void exit() {
+                this->exit_func(this);
                 glfwSetWindowShouldClose(this->window, GLFW_TRUE);
             }
 
             ~renderer() {
+                this->exit_func(this);
+
                 glDeleteShader(this->program.frag);
                 glDeleteShader(this->program.vert);
 
