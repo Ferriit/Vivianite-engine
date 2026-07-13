@@ -9,6 +9,8 @@
 #include <fstream>
 #include <string>
 #include <cstdio>
+#include <bits/stdc++.h>
+#include <algorithm>
 
 #define VIVIANITE_VSYNC_TRUE 1
 #define VIVIANITE_VSYNC_FALSE 0
@@ -56,11 +58,14 @@ namespace vivianite {
             void (*exit_func)(vivianite::renderer*);
 
             std::vector<model> render_queue = {};
+            std::vector<int> keys = {};
+            std::vector<int> scancodes = {};
 
             glm::vec3 camera_pos = glm::vec3(0.0f, 0.0f, 5.0f);
             glm::mat4 projection;
 
-            double delta_time;
+            double delta_time = 0.0;
+            double time = 0.0;
 
             static void error_callback(int error, const char* description) {
                 fprintf(stderr, "Error: %s\n", description);
@@ -248,9 +253,9 @@ namespace vivianite {
                 while (!glfwWindowShouldClose(window)) {
                     glUseProgram(this->program.program);
 
-                    double now = glfwGetTime();
-                    this->delta_time = now - last;
-                    last = now;
+                    this->time = glfwGetTime();
+                    this->delta_time = this->time - last;
+                    last = this->time;
 
                     this->update_func(this);
 
@@ -308,6 +313,18 @@ namespace vivianite {
 
             bool check_status() {
                 return this->init_status;
+            }
+
+        private:
+            void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+                if ((std::count(this->keys.begin(), this->keys.end(), key) == 0) && (action == GLFW_PRESS)) {
+                    this->keys.push_back(key);
+                    this->scancodes.push_back(scancode);
+                }
+                else if ((std::count(this->keys.begin(), this->keys.end(), key) > 0) && (action == GLFW_RELEASE)) {
+                    this->keys.erase(std::find(this->keys.begin(), this->keys.end(), key));
+                    this->scancodes.erase(std::find(this->scancodes.begin(), this->scancodes.end(), scancode));
+                }
             }
     };
 };

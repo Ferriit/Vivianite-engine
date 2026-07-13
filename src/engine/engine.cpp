@@ -132,51 +132,62 @@ namespace vivianite {
             vertex_count
         };
     }
+
+    class engine {
+        public:
+            int status = 0;
+
+            engine() {
+                vivianite::renderer r_ctx;
+
+                if (!r_ctx.check_status()) {
+                    status = 1;
+                    return;
+                }
+
+                r_ctx.initialize();
+
+                r_ctx.program.frag_path = "assets/frag.glsl";
+                r_ctx.program.vert_path = "assets/vert.glsl";
+
+                r_ctx.create_shaders();
+                
+                r_ctx.setup_func = this->setup;
+                r_ctx.update_func = this->update;
+                r_ctx.exit_func = this->exit;
+
+                r_ctx.run();
+            }
+
+            static void setup(vivianite::renderer* ctx) {
+                vivianite::mesh cube_obj = vivianite::load_obj("assets/cube.obj");
+                GLuint cube = ctx->upload_mesh(cube_obj.vertices);
+
+                cube_obj.vao = cube;
+
+                vivianite::model cube_model = {.obj=cube_obj, .position=glm::vec3(0.0f, 0.0f, 0.0f)};
+
+                ctx->render_queue.push_back(cube_model);
+
+                ctx->vsync = VIVIANITE_VSYNC_TRUE;
+                ctx->apply_settings();
+                printf("SETUP\n");
+            }
+
+            static void update(vivianite::renderer* ctx) {
+                glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            }
+
+            static void exit(vivianite::renderer* ctx) {
+                printf("%f FPS (%f ms)\n", 1 / ctx->delta_time, ctx->delta_time * 1000.0f);
+            }
+    };
 };
 
-void setup(vivianite::renderer* ctx) {
-    vivianite::mesh cube_obj = vivianite::load_obj("assets/cube.obj");
-    GLuint cube = ctx->upload_mesh(cube_obj.vertices);
-
-    cube_obj.vao = cube;
-
-    vivianite::model cube_model = {.obj=cube_obj, .position=glm::vec3(0.0f, 0.0f, 0.0f)};
-
-    ctx->render_queue.push_back(cube_model);
-
-    ctx->vsync = VIVIANITE_VSYNC_TRUE;
-    ctx->apply_settings();
-    printf("SETUP\n");
-}
-
-void update(vivianite::renderer* ctx) {
-    glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-}
-
-void exit(vivianite::renderer* ctx) {
-    printf("%f FPS (%f ms)\n", 1 / ctx->delta_time, ctx->delta_time * 1000.0f);
-}
 
 int main() {
-    vivianite::renderer r_ctx;
+    vivianite::engine ctx;
 
-    if (!r_ctx.check_status()) {
-        return 1;
-    }
-
-    r_ctx.initialize();
-
-    r_ctx.program.frag_path = "assets/frag.glsl";
-    r_ctx.program.vert_path = "assets/vert.glsl";
-
-    r_ctx.create_shaders();
-    
-    r_ctx.setup_func = setup;
-    r_ctx.update_func = update;
-    r_ctx.exit_func = exit;
-
-    r_ctx.run();
-
-    return 0;
+    return ctx.status;
 }
