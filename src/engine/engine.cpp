@@ -137,6 +137,9 @@ namespace vivianite {
         public:
             int status = 0;
 
+            std::vector<int> keys = {};
+            std::vector<int> scancodes = {};
+
             engine() {
                 vivianite::renderer r_ctx;
 
@@ -181,6 +184,18 @@ namespace vivianite {
 
             static void exit(vivianite::renderer* ctx) {
                 printf("%f FPS (%f ms)\n", 1 / ctx->delta_time, ctx->delta_time * 1000.0f);
+            }
+
+        private:
+            void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+                if ((std::count(this->keys.begin(), this->keys.end(), key) == 0) && (action == GLFW_PRESS)) {
+                    this->keys.push_back(key);
+                    this->scancodes.push_back(scancode);
+                }
+                else if ((std::count(this->keys.begin(), this->keys.end(), key) > 0) && (action == GLFW_RELEASE)) {
+                    this->keys.erase(std::find(this->keys.begin(), this->keys.end(), key));
+                    this->scancodes.erase(std::find(this->scancodes.begin(), this->scancodes.end(), scancode));
+                }
             }
     };
 };
