@@ -137,8 +137,8 @@ namespace vivianite {
         public:
             int status = 0;
 
-            std::vector<int> keys = {};
-            std::vector<int> scancodes = {};
+            std::array<bool, GLFW_KEY_LAST + 1> keys = {};
+            std::unordered_set<int> scancodes = {};
 
             engine() {
                 vivianite::renderer r_ctx;
@@ -159,42 +159,64 @@ namespace vivianite {
                 r_ctx.update_func = this->update;
                 r_ctx.exit_func = this->exit;
 
+                r_ctx.engine_ctx = this;
+
                 r_ctx.run();
             }
 
-            static void setup(vivianite::renderer* ctx) {
+            static void setup(vivianite::renderer* r_ctx, void* ctx) {
+                auto* e_ctx = (vivianite::engine*)ctx;
+
                 vivianite::mesh cube_obj = vivianite::load_obj("assets/cube.obj");
-                GLuint cube = ctx->upload_mesh(cube_obj.vertices);
+                GLuint cube = r_ctx->upload_mesh(cube_obj.vertices);
 
                 cube_obj.vao = cube;
 
                 vivianite::model cube_model = {.obj=cube_obj, .position=glm::vec3(0.0f, 0.0f, 0.0f)};
 
-                ctx->render_queue.push_back(cube_model);
+                r_ctx->render_queue.push_back(cube_model);
 
-                ctx->vsync = VIVIANITE_VSYNC_TRUE;
-                ctx->apply_settings();
+                r_ctx->vsync = VIVIANITE_VSYNC_TRUE;
+                r_ctx->apply_settings();
+
+                glfwSetKeyCallback(r_ctx->window, e_ctx->key_callback);
                 printf("SETUP\n");
             }
 
-            static void update(vivianite::renderer* ctx) {
+            static void update(vivianite::renderer* r_ctx, void* ctx) {
+                auto* e_ctx = (vivianite::engine*)ctx;
+
                 glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+                if (e_ctx->keys[GLFW_KEY_ESCAPE] == true) {
+                    r_ctx->exit();
+                }
             }
 
-            static void exit(vivianite::renderer* ctx) {
-                printf("%f FPS (%f ms)\n", 1 / ctx->delta_time, ctx->delta_time * 1000.0f);
+            static void exit(vivianite::renderer* r_ctx, void* ctx) {
+                auto* e_ctx = (vivianite::engine*)ctx;
+
+                printf("%f FPS (%f ms)\n", 1 / r_ctx->delta_time, r_ctx->delta_time * 1000.0f);
             }
 
         private:
-            void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-                if ((std::count(this->keys.begin(), this->keys.end(), key) == 0) && (action == GLFW_PRESS)) {
-                    this->keys.push_back(key);
-                    this->scancodes.push_back(scancode);
+            static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+                auto* r_ctx = static_cast<vivianite::renderer*>(glfwGetWindowUserPointer(window));
+                if (!r_ctx)
+                    return;
+
+                auto* e_ctx = static_cast<vivianite::engine*>(r_ctx->engine_ctx);
+                if (!e_ctx)
+                    return;
+
+                if (action == GLFW_PRESS) {
+                    e_ctx->keys[key] = true;
+                    e_ctx->scancodes.insert(scancode);
                 }
-                else if ((std::count(this->keys.begin(), this->keys.end(), key) > 0) && (action == GLFW_RELEASE)) {
-                    this->keys.erase(std::find(this->keys.begin(), this->keys.end(), key));
-                    this->scancodes.erase(std::find(this->scancodes.begin(), this->scancodes.end(), scancode));
+                else if (action == GLFW_RELEASE) {
+                    e_ctx->keys[key] = false;
+                    e_ctx->scancodes.erase(scancode);
                 }
             }
     };

@@ -10,7 +10,6 @@
 #include <string>
 #include <cstdio>
 #include <bits/stdc++.h>
-#include <algorithm>
 
 #define VIVIANITE_VSYNC_TRUE 1
 #define VIVIANITE_VSYNC_FALSE 0
@@ -53,9 +52,11 @@ namespace vivianite {
             int gl_major_version = 4;
             int gl_minor_version = 6;
 
-            void (*update_func)(vivianite::renderer*);
-            void (*setup_func)(vivianite::renderer*);
-            void (*exit_func)(vivianite::renderer*);
+            void (*update_func)(vivianite::renderer*, void*);
+            void (*setup_func)(vivianite::renderer*, void*);
+            void (*exit_func)(vivianite::renderer*, void*);
+
+            void* engine_ctx;
 
             std::vector<model> render_queue = {};
 
@@ -204,6 +205,7 @@ namespace vivianite {
                 }
 
                 glfwMakeContextCurrent(window);
+                glfwSetWindowUserPointer(window, this);
                 
                 // GLAD init
                 gladLoadGL(glfwGetProcAddress);
@@ -235,7 +237,7 @@ namespace vivianite {
             }
 
             void run() {
-                this->setup_func(this);
+                this->setup_func(this, engine_ctx);
 
                 glUseProgram(this->program.program);
 
@@ -255,7 +257,7 @@ namespace vivianite {
                     this->delta_time = this->time - last;
                     last = this->time;
 
-                    this->update_func(this);
+                    this->update_func(this, engine_ctx);
 
                     glm::mat4 view = glm::translate(
                         glm::mat4(1.0f),
@@ -293,12 +295,12 @@ namespace vivianite {
             }
 
             void exit() {
-                this->exit_func(this);
+                this->exit_func(this, engine_ctx);
                 glfwSetWindowShouldClose(this->window, GLFW_TRUE);
             }
 
             ~renderer() {
-                this->exit_func(this);
+                this->exit_func(this, engine_ctx);
 
                 glDeleteShader(this->program.frag);
                 glDeleteShader(this->program.vert);
