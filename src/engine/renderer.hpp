@@ -31,6 +31,7 @@ namespace vivianite {
     struct model {
         mesh obj;
         glm::vec3 position;
+        glm::vec3 rotation;
     };
 
     class renderer {
@@ -274,11 +275,32 @@ namespace vivianite {
                     for (model obj : this->render_queue) {
                         glBindVertexArray(obj.obj.vao);
 
+                        // Translation
                         glm::mat4 modelMat = glm::translate(
                             glm::mat4(1.0f),
                             obj.position
                         );
+                        
+                        // Rotation (X, Y, Z)
+                        modelMat = glm::rotate(
+                            modelMat,
+                            obj.rotation.x;
+                            glm::vec3(1.0f, 0.0f, 0.0f)
+                        );
 
+                        modelMat = glm::rotate(
+                            modelMat,
+                            obj.rotation.y;
+                            glm::vec3(0.0f, 1.0f, 0.0f)
+                        );
+                        
+                        modelMat = glm::rotate(
+                            modelMat,
+                            obj.rotation.z;
+                            glm::vec3(0.0f, 0.0f, 1.0f)
+                        );
+
+                        // Upload model
                         glUniformMatrix4fv(
                             glGetUniformLocation(this->program.program, "model"),
                             1,
