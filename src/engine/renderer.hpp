@@ -284,19 +284,19 @@ namespace vivianite {
                         // Rotation (X, Y, Z)
                         modelMat = glm::rotate(
                             modelMat,
-                            obj.rotation.x;
+                            obj.rotation.x,
                             glm::vec3(1.0f, 0.0f, 0.0f)
                         );
 
                         modelMat = glm::rotate(
                             modelMat,
-                            obj.rotation.y;
+                            obj.rotation.y,
                             glm::vec3(0.0f, 1.0f, 0.0f)
                         );
                         
                         modelMat = glm::rotate(
                             modelMat,
-                            obj.rotation.z;
+                            obj.rotation.z,
                             glm::vec3(0.0f, 0.0f, 1.0f)
                         );
 
