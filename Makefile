@@ -1,44 +1,19 @@
-CXX = g++
-CXXFLAGS = -std=c++20 -Wall -Wextra -O2 -Iinclude -Isrc
+GL_VERSION := 4.6
 
-LDFLAGS = -lglfw -ldl -lGL
+CXX := g++
+CXX_GLAD_INCLUDE := -Iglad/include glad/src/gl.c
+CXX_GL := -lglfw -ldl
+CXX_FLAGS := -o build/Vivianite
 
-SRC = src/engine/engine.cpp src/glad.c
+CXX_SRC = src/engine/engine.cpp
 
-OBJ = $(SRC:src/%.cpp=build/%.o)
-OBJ := $(OBJ:src/%.c=build/%.o)
+.PHONY: glad
 
-TARGET = engine
+default: engine
 
-GLAD_DIR = include
-GLAD_VERSION = 4.6
-GLAD_PROFILE = core
-
-
-all: glad $(TARGET)
-
-
-$(TARGET): $(OBJ)
-	$(CXX) $(OBJ) -o $@ $(LDFLAGS)
-
-
-build/%.o: src/%.cpp
-	mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-
-build/%.o: src/%.c
-	mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
+engine: glad
+	mkdir -p build/
+	$(CXX) $(CXX_SRC) $(CXX_GLAD_INCLUDE) $(CXX_GL) $(CXX_FLAGS)
 
 glad:
-	@echo "Generating GLAD..."
-	glad --api gl:$(GLAD_VERSION) --profile $(GLAD_PROFILE) \
-	     --out-path $(GLAD_DIR) c
-
-
-clean:
-	rm -rf build $(TARGET)
-
-.PHONY: all clean glad
+	glad --api gl:core=$(GL_VERSION) --out-path glad c --loader
