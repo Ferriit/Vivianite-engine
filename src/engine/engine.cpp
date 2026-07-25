@@ -191,6 +191,12 @@ namespace vivianite {
 
                 vivianite::model cube_model = {.obj=cube_obj, .position=glm::vec3(0.0f, 0.0f, 0.0f)};
 
+                cube_model.mat = (vivianite::material){
+                    .albedo = glm::vec3(1.0f, 1.0f, 1.0f),
+                    .shininess = 32.0f,
+                    .specular_strength = 0.5f
+                };
+
                 r_ctx->render_queue.push_back(cube_model);
 
                 r_ctx->vsync = VIVIANITE_VSYNC_TRUE;

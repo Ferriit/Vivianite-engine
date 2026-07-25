@@ -22,6 +22,13 @@ namespace vivianite {
         GLuint frag, vert, program;
     };
 
+    // TODO: Add a material format
+    struct material {
+        glm::vec3 albedo;
+        float shininess;
+        float specular_strength;
+    };
+
     struct mesh {
         std::vector<float> vertices;
         GLuint vao;
@@ -32,6 +39,7 @@ namespace vivianite {
         mesh obj;
         glm::vec3 position;
         glm::vec3 rotation;
+        material mat;
     };
 
     class renderer {
@@ -63,6 +71,9 @@ namespace vivianite {
 
             glm::vec3 camera_pos = glm::vec3(0.0f, 0.0f, 5.0f);
             glm::mat4 projection;
+
+            glm::vec3 light_pos = glm::vec3(0.0f, 5.0f, 5.0f);
+            glm::vec3 light_col = glm::vec3(1.0f, 0.87f, 0.78f); // Warmish color
 
             double delta_time = 0.0;
             double time = 0.0;
@@ -276,6 +287,27 @@ namespace vivianite {
                         glm::value_ptr(view)
                     );
 
+                    // Light stuff
+                    glUniform3fv(
+                        glGetUniformLocation(this->program.program, "light_pos"),
+                        1,
+                        glm::value_ptr(this->light_pos)
+                    );
+
+                    glUniform3fv(
+                        glGetUniformLocation(this->program.program, "light_col"),
+                        1,
+                        glm::value_ptr(this->light_col)
+                    );
+
+                    // Camera
+                    glUniform3fv(
+                        glGetUniformLocation(this->program.program, "camera_pos"),
+                        1,
+                        glm::value_ptr(this->camera_pos)
+                    );
+
+                    // Per-Model stuff
                     for (model obj : this->render_queue) {
                         glBindVertexArray(obj.obj.vao);
 
@@ -310,6 +342,23 @@ namespace vivianite {
                             1,
                             GL_FALSE,
                             glm::value_ptr(modelMat)
+                        );
+
+                        // Material
+                        glUniform3fv(
+                            glGetUniformLocation(this->program.program, "material.albedo"),
+                            1,
+                            glm::value_ptr(obj.mat.albedo)
+                        );
+
+                        glUniform1f(
+                            glGetUniformLocation(this->program.program, "material.shininess"),
+                            obj.mat.shininess
+                        );
+
+                        glUniform1f(
+                            glGetUniformLocation(this->program.program, "material.specularStrength"),
+                            obj.mat.specular_strength
                         );
 
                         glDrawArrays(GL_TRIANGLES, 0, obj.obj.vertex_count);
