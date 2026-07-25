@@ -206,8 +206,8 @@ namespace vivianite {
                 // Set up lights
                 r_ctx->lights.push_back(
                     (vivianite::light){
-                        .position=glm::vec4(-1.0f, 5.0f, 5.0f, 1.0f),
-                        .color=glm::vec4(1.0f, 0.85f, 0.75, 1.0f),
+                        .position=glm::vec4(-5.0f, 0.0f, 0.0f, 1.0f),
+                        .color=glm::vec4(0.0f, 1.0f, 1.0f, 1.0f),
                         .radius=50.0f,
                         .strength=1.0f,
                         .linear=0.09f,
@@ -216,7 +216,7 @@ namespace vivianite {
                 );
                 r_ctx->lights.push_back(
                     (vivianite::light){
-                        .position=glm::vec4(1.0f, 5.0f, 5.0f, 1.0f),
+                        .position=glm::vec4(5.0f, 0.0f, 0.0f, 1.0f),
                         .color=glm::vec4(1.0f, 0.0f, 0.0f, 1.0f),
                         .radius=50.0f,
                         .strength=1.0f,
