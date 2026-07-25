@@ -1,4 +1,6 @@
 #include "renderer.hpp"
+#include "logging.hpp"
+
 #include <GL/gl.h>
 #include <glad/gl.h>
 #include <cstdio>
@@ -227,7 +229,7 @@ namespace vivianite {
                 r_ctx->init_SSBOs();
 
                 glfwSetKeyCallback(r_ctx->window, e_ctx->key_callback);
-                printf("SETUP\n");
+                Logging().log(Logging::log_level::INFO, "SETUP");
             }
 
             static void update(vivianite::renderer* r_ctx, void* ctx) {
@@ -249,7 +251,7 @@ namespace vivianite {
             static void exit(vivianite::renderer* r_ctx, void* ctx) {
                 auto* e_ctx = (vivianite::engine*)ctx;
 
-                printf("%f FPS (%f ms)\n", 1 / r_ctx->delta_time, r_ctx->delta_time * 1000.0f);
+                Logging().log(Logging::log_level::INFO, "%f FPS (%f ms)", 1 / r_ctx->delta_time, r_ctx->delta_time * 1000.0f);
             }
 
         private:

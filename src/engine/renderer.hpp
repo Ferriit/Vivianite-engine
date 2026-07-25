@@ -1,5 +1,8 @@
 #pragma once
 
+#include "time.hpp"
+#include "logging.hpp";
+
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -85,6 +88,8 @@ namespace vivianite {
 
             double delta_time = 0.0;
             double time = 0.0;
+
+            Logging logger();
 
             static void error_callback(int error, const char* description) {
                 fprintf(stderr, "Error: %s\n", description);
