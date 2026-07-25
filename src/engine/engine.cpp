@@ -22,11 +22,19 @@ namespace vivianite {
         std::vector<float> y_list;
         std::vector<float> z_list;
 
-        std::vector<std::array<int, 3>> faces;
+        std::vector<float> nx_list;
+        std::vector<float> ny_list;
+        std::vector<float> nz_list;
+
+        struct Face {
+            std::array<int, 3> vertex;
+            std::array<int, 3> normal;
+        };
+
+        std::vector<Face> faces;
 
         std::string line;
 
-        // Read vertices and faces
         while (std::getline(file, line)) {
 
             if (line.rfind("v ", 0) == 0) {
@@ -40,35 +48,40 @@ namespace vivianite {
                 z_list.push_back(z);
             }
 
+            else if (line.rfind("vn ", 0) == 0) {
+                std::stringstream ss(line.substr(3));
+
+                float nx, ny, nz;
+                ss >> nx >> ny >> nz;
+
+                nx_list.push_back(nx);
+                ny_list.push_back(ny);
+                nz_list.push_back(nz);
+            }
+
             else if (line.rfind("f ", 0) == 0) {
                 std::stringstream ss(line.substr(2));
 
-                std::array<int, 3> face;
+                Face face;
 
                 for (int i = 0; i < 3; i++) {
-                    std::string vertex;
-                    ss >> vertex;
+                    std::string token;
+                    ss >> token;
 
-                    // Extract the vertex index before the first '/'
-                    size_t slash = vertex.find('/');
+                    size_t s1 = token.find('/');
+                    size_t s2 = token.find('/', s1 + 1);
 
-                    if (slash != std::string::npos) {
-                        vertex = vertex.substr(0, slash);
-                    }
-
-                    face[i] = std::stoi(vertex) - 1;
+                    face.vertex[i] = std::stoi(token.substr(0, s1)) - 1;
+                    face.normal[i] = std::stoi(token.substr(s2 + 1)) - 1;
                 }
 
                 faces.push_back(face);
             }
         }
 
-
         if (x_list.empty())
             return {};
 
-
-        // Find bounds for coloring
         float min_x = x_list[0], max_x = x_list[0];
         float min_y = y_list[0], max_y = y_list[0];
         float min_z = z_list[0], max_z = z_list[0];
@@ -92,23 +105,26 @@ namespace vivianite {
         float dy = (max_y - min_y == 0) ? 1.0f : max_y - min_y;
         float dz = (max_z - min_z == 0) ? 1.0f : max_z - min_z;
 
-
-        // Expand triangles into a VAO-friendly vertex array
         std::vector<float> vertices;
-        vertices.reserve(faces.size() * 3 * 6);
+        std::vector<float> normals;
 
-        for (auto& face : faces) {
-            for (int index : face) {
+        vertices.reserve(faces.size() * 18);
+        normals.reserve(faces.size() * 9);
 
-                float x = x_list[index];
-                float y = y_list[index];
-                float z = z_list[index];
+        for (const Face& face : faces) {
+            for (int i = 0; i < 3; i++) {
+
+                int vi = face.vertex[i];
+                int ni = face.normal[i];
+
+                float x = x_list[vi];
+                float y = y_list[vi];
+                float z = z_list[vi];
 
                 float r = (x - min_x) / dx;
                 float g = (y - min_y) / dy;
                 float b = (z - min_z) / dz;
 
-                // Center model
                 x -= cx;
                 y -= cy;
                 z -= cz;
@@ -120,16 +136,18 @@ namespace vivianite {
                 vertices.push_back(r);
                 vertices.push_back(g);
                 vertices.push_back(b);
+
+                normals.push_back(nx_list[ni]);
+                normals.push_back(ny_list[ni]);
+                normals.push_back(nz_list[ni]);
             }
         }
 
-
-        size_t vertex_count = vertices.size() / 6;
-
         return mesh{
             std::move(vertices),
+            std::move(normals),
             0,
-            vertex_count
+            faces.size() * 3
         };
     }
 
@@ -188,6 +206,8 @@ namespace vivianite {
 
                 glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+                r_ctx->render_queue[0].rotation.y += 0.1f;
 
                 if (e_ctx->keys[GLFW_KEY_ESCAPE] == true) {
                     r_ctx->exit();

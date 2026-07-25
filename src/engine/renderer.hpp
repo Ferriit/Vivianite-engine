@@ -24,6 +24,7 @@ namespace vivianite {
 
     struct mesh {
         std::vector<float> vertices;
+        std::vector<float> normals;
         GLuint vao;
         size_t vertex_count;
     };
