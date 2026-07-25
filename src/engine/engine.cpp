@@ -13,10 +13,12 @@
 
 namespace vivianite {
     mesh load_obj(const char* filename) {
+        Logging().log(Logging::INFO, "Reading file \"%s\"", filename);
+
         std::ifstream file(filename);
 
         if (!file.is_open()) {
-            std::cerr << "Unable to open model file.\n";
+            Logging().log(Logging::ERROR, "Unable to open model \"%s\"", filename);
             return {};
         }
 
@@ -173,7 +175,8 @@ namespace vivianite {
                 r_ctx.program.vert_path = "assets/vert.glsl";
 
                 r_ctx.create_shaders();
-                
+
+                Logging().log(Logging::INFO, "Assigning functions");
                 r_ctx.setup_func = this->setup;
                 r_ctx.update_func = this->update;
                 r_ctx.exit_func = this->exit;
@@ -200,11 +203,13 @@ namespace vivianite {
                     .specular_strength = 0.5f
                 };
 
+                Logging().log(Logging::INFO, "Uploading models");
                 r_ctx->render_queue.push_back(cube_model);
 
                 r_ctx->vsync = VIVIANITE_VSYNC_TRUE;
                 r_ctx->apply_settings();
 
+                Logging().log(Logging::INFO, "Uploading lights");
                 // Set up lights
                 r_ctx->lights.push_back(
                     (vivianite::light){
@@ -229,7 +234,7 @@ namespace vivianite {
                 r_ctx->init_SSBOs();
 
                 glfwSetKeyCallback(r_ctx->window, e_ctx->key_callback);
-                Logging().log(Logging::log_level::INFO, "SETUP");
+                Logging().log(Logging::log_level::NOTICE, "ENGINE SETUP DONE");
             }
 
             static void update(vivianite::renderer* r_ctx, void* ctx) {
