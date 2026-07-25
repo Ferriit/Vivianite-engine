@@ -7,7 +7,7 @@ CXX_FLAGS := -o build/Vivianite
 
 CXX_SRC = src/engine/engine.cpp
 
-.PHONY: glad
+.PHONY: glad run
 
 default: engine
 
@@ -17,3 +17,6 @@ engine: glad
 
 glad:
 	glad --api gl:core=$(GL_VERSION) --out-path glad c --loader
+
+run: engine
+	./build/Vivianite

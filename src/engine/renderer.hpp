@@ -24,7 +24,6 @@ namespace vivianite {
 
     struct mesh {
         std::vector<float> vertices;
-        std::vector<float> normals;
         GLuint vao;
         size_t vertex_count;
     };
@@ -183,15 +182,15 @@ namespace vivianite {
                 glBufferData(GL_ARRAY_BUFFER, mesh.size() * sizeof(float), mesh.data(), GL_STATIC_DRAW);
 
                 // Position
-                glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+                glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)0);
                 glEnableVertexAttribArray(0);
                 
                 // Color
-                glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+                glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(3 * sizeof(float)));
                 glEnableVertexAttribArray(1);
 
                 // Normal
-                glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(6 * sizeof(float)));
+                glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(6 * sizeof(float)));
                 glEnableVertexAttribArray(2);
 
                 return vao;

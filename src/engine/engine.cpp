@@ -106,10 +106,7 @@ namespace vivianite {
         float dz = (max_z - min_z == 0) ? 1.0f : max_z - min_z;
 
         std::vector<float> vertices;
-        std::vector<float> normals;
-
-        vertices.reserve(faces.size() * 18);
-        normals.reserve(faces.size() * 9);
+        vertices.reserve(faces.size() * 3 * 9);
 
         for (const Face& face : faces) {
             for (int i = 0; i < 3; i++) {
@@ -129,23 +126,25 @@ namespace vivianite {
                 y -= cy;
                 z -= cz;
 
+                // Position
                 vertices.push_back(x);
                 vertices.push_back(y);
                 vertices.push_back(z);
 
+                // Color
                 vertices.push_back(r);
                 vertices.push_back(g);
                 vertices.push_back(b);
 
-                normals.push_back(nx_list[ni]);
-                normals.push_back(ny_list[ni]);
-                normals.push_back(nz_list[ni]);
+                // Normal
+                vertices.push_back(nx_list[ni]);
+                vertices.push_back(ny_list[ni]);
+                vertices.push_back(nz_list[ni]);
             }
         }
 
         return mesh{
             std::move(vertices),
-            std::move(normals),
             0,
             faces.size() * 3
         };
@@ -207,7 +206,10 @@ namespace vivianite {
                 glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-                r_ctx->render_queue[0].rotation.y += 0.1f;
+                // Rotate
+                r_ctx->render_queue[0].rotation.y += 0.03f;  
+                r_ctx->render_queue[0].rotation.x += 0.03f;
+                r_ctx->render_queue[0].rotation.z += 0.03f;
 
                 if (e_ctx->keys[GLFW_KEY_ESCAPE] == true) {
                     r_ctx->exit();
