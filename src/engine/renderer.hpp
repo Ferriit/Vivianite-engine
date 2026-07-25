@@ -1,14 +1,12 @@
 #pragma once
 
-#include "time.hpp"
-#include "logging.hpp";
+#include "logging.hpp"
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <iostream>
 #include <fstream>
 #include <string>
 #include <cstdio>
@@ -89,7 +87,7 @@ namespace vivianite {
             double delta_time = 0.0;
             double time = 0.0;
 
-            Logging logger();
+            Logging logger;
 
             static void error_callback(int error, const char* description) {
                 fprintf(stderr, "Error: %s\n", description);
@@ -98,6 +96,7 @@ namespace vivianite {
             renderer() {
                 if (!glfwInit()) {
                     this->init_status = false;
+                    logger.log(logger.FATAL, "Failed to initialize GLFW");
                     return;
                 }
                 glfwSetErrorCallback(this->error_callback);
@@ -111,10 +110,13 @@ namespace vivianite {
             }
 
             bool read_shaders() {
+                logger.log(logger.INFO, "Reading GLSL shaders");
+
                 // Frag
                 std::ifstream frag_file(this->program.frag_path);
 
                 if (!frag_file.is_open()) {
+                    logger.log(logger.FATAL, "Failed to read Fragment shader");
                     return false;
                 }
 
@@ -129,6 +131,7 @@ namespace vivianite {
                 std::ifstream vert_file(this->program.vert_path);
 
                 if (!vert_file.is_open()) {
+                    logger.log(logger.FATAL, "Failed to read Vertex shader");
                     return false;
                 }
 
@@ -143,6 +146,8 @@ namespace vivianite {
             }
 
             void create_shaders() {
+                logger.log(logger.INFO, "Creating shader program");
+
                 read_shaders(); // Populates frag_raw and vert_raw
 
                 this->program.frag = glCreateShader(GL_FRAGMENT_SHADER);
@@ -165,7 +170,7 @@ namespace vivianite {
                 glGetShaderiv(this->program.frag, GL_COMPILE_STATUS, &isCompiled);
                 if(isCompiled == GL_FALSE) {
                     glGetShaderInfoLog(this->program.frag, 512, nullptr, infoLog);
-                    std::cout << "Fragment shader error:\n" << infoLog << "\n";
+                    logger.log(logger.ERROR, "Fragment shader error:\n%512s", infoLog);
 
                     glDeleteShader(this->program.frag); // Don't leak the shader.
                     return;
@@ -179,7 +184,7 @@ namespace vivianite {
                 glGetShaderiv(this->program.vert, GL_COMPILE_STATUS, &isCompiled);
                 if(isCompiled == GL_FALSE) {
                     glGetShaderInfoLog(this->program.vert, 512, nullptr, infoLog);
-                    std::cout << "Vertex shader error:\n" << infoLog << "\n";
+                    logger.log(logger.ERROR, "Vertex shader error:\n%512s", infoLog);
 
                     glDeleteShader(this->program.frag); // Don't leak the shader.
                     return;
@@ -221,6 +226,7 @@ namespace vivianite {
             }
 
             void init_SSBOs() {
+                logger.log(logger.INFO, "Uploading SSBOs");
                 glGenBuffers(1, &this->light_ssbo);
                 glBindBuffer(GL_SHADER_STORAGE_BUFFER, this->light_ssbo);
 
@@ -254,6 +260,7 @@ namespace vivianite {
             }
 
             bool initialize() {
+                logger.log(logger.INFO, "Initializing OpenGL and GLAD");
                 // OpenGL 4.6 CORE
                 glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, this->gl_major_version);
                 glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, this->gl_minor_version);
@@ -263,6 +270,7 @@ namespace vivianite {
                 this->window = glfwCreateWindow(this->width, this->height, this->title, NULL, NULL);
 
                 if (!this->window) {
+                    logger.log(logger.FATAL, "Failed to open Window");
                     return false;
                 }
 
@@ -286,6 +294,8 @@ namespace vivianite {
             }
 
             void apply_settings() {
+                logger.log(logger.NOTICE, "Applying GLFW settings");
+
                 glfwSetWindowTitle(window, this->title);
                 glfwSetWindowSize(window, this->width, this->height);
                 glfwSwapInterval(this->vsync);
@@ -299,8 +309,10 @@ namespace vivianite {
             }
 
             void run() {
+                logger.log(logger.INFO, "Starting main setup");
                 this->setup_func(this, engine_ctx);
 
+                logger.log(logger.INFO, "Assigning shader program");
                 glUseProgram(this->program.program);
 
                 glUniformMatrix4fv(
@@ -311,6 +323,8 @@ namespace vivianite {
                 );
 
                 double last = glfwGetTime();
+
+                logger.log(logger.INFO, "Starting main update loop");
 
                 while (!glfwWindowShouldClose(window)) {
                     glUseProgram(this->program.program);
@@ -414,6 +428,7 @@ namespace vivianite {
             }
 
             ~renderer() {
+                logger.log(logger.NOTICE, "Exitting... Check log for errors.");
                 this->exit_func(this, engine_ctx);
 
                 glDeleteShader(this->program.frag);
