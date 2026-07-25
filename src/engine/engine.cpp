@@ -184,6 +184,7 @@ namespace vivianite {
             static void setup(vivianite::renderer* r_ctx, void* ctx) {
                 auto* e_ctx = (vivianite::engine*)ctx;
 
+                // Set up cube
                 vivianite::mesh cube_obj = vivianite::load_obj("assets/cube.obj");
                 GLuint cube = r_ctx->upload_mesh(cube_obj.vertices);
 
@@ -201,6 +202,19 @@ namespace vivianite {
 
                 r_ctx->vsync = VIVIANITE_VSYNC_TRUE;
                 r_ctx->apply_settings();
+
+                // Set up lights
+                r_ctx->lights.push_back(
+                    (vivianite::light){
+                        .position=glm::vec4(0.0f, 5.0f, 5.0f, 1.0f),
+                        .color=glm::vec4(1.0f, 0.85f, 0.75, 1.0f),
+                        .radius=50.0f,
+                        .strength=1.0f,
+                        .linear=0.09f,
+                        .quadratic=0.032f
+                    }
+                );
+                r_ctx->init_SSBOs();
 
                 glfwSetKeyCallback(r_ctx->window, e_ctx->key_callback);
                 printf("SETUP\n");

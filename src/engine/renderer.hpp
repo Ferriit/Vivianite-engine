@@ -23,23 +23,31 @@ namespace vivianite {
     };
 
     // TODO: Add a material format
-    struct material {
+    struct alignas(16) material {
         glm::vec3 albedo;
         float shininess;
         float specular_strength;
     };
 
-    struct mesh {
+    struct alignas(16) mesh {
         std::vector<float> vertices;
         GLuint vao;
         size_t vertex_count;
     };
 
-    struct model {
+    struct alignas(16) model {
         mesh obj;
         glm::vec3 position;
         glm::vec3 rotation;
         material mat;
+    };
+
+    struct alignas(16) light {
+        glm::vec4 position;
+        glm::vec4 color;
+        float radius, strength;
+        float linear;
+        float quadratic;
     };
 
     class renderer {
@@ -72,8 +80,8 @@ namespace vivianite {
             glm::vec3 camera_pos = glm::vec3(0.0f, 0.0f, 5.0f);
             glm::mat4 projection;
 
-            glm::vec3 light_pos = glm::vec3(0.0f, 5.0f, 5.0f);
-            glm::vec3 light_col = glm::vec3(1.0f, 0.87f, 0.78f); // Warmish color
+            std::vector<light> lights = {};
+            GLuint light_ssbo;
 
             double delta_time = 0.0;
             double time = 0.0;
@@ -207,6 +215,39 @@ namespace vivianite {
                 return vao;
             }
 
+            void init_SSBOs() {
+                glGenBuffers(1, &this->light_ssbo);
+                glBindBuffer(GL_SHADER_STORAGE_BUFFER, this->light_ssbo);
+
+                glBufferData(
+                    GL_SHADER_STORAGE_BUFFER,
+                    lights.size() * sizeof(light),
+                    lights.data(),
+                    GL_DYNAMIC_DRAW
+                );
+
+                glBindBufferBase(
+                    GL_SHADER_STORAGE_BUFFER,
+                    0,
+                    light_ssbo
+                );
+
+                glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+            }
+
+            void upload_lights() {
+                glBindBuffer(GL_SHADER_STORAGE_BUFFER, this->light_ssbo);
+
+                glBufferData(
+                    GL_SHADER_STORAGE_BUFFER,
+                    this->lights.size() * sizeof(light),
+                    this->lights.data(),
+                    GL_DYNAMIC_DRAW
+                );
+
+                glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+            }
+
             bool initialize() {
                 // OpenGL 4.6 CORE
                 glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, this->gl_major_version);
@@ -287,24 +328,17 @@ namespace vivianite {
                         glm::value_ptr(view)
                     );
 
-                    // Light stuff
-                    glUniform3fv(
-                        glGetUniformLocation(this->program.program, "light_pos"),
-                        1,
-                        glm::value_ptr(this->light_pos)
-                    );
-
-                    glUniform3fv(
-                        glGetUniformLocation(this->program.program, "light_col"),
-                        1,
-                        glm::value_ptr(this->light_col)
-                    );
-
                     // Camera
                     glUniform3fv(
                         glGetUniformLocation(this->program.program, "camera_pos"),
                         1,
                         glm::value_ptr(this->camera_pos)
+                    );
+
+                    // Lights
+                    glUniform1i(
+                        glGetUniformLocation(this->program.program, "light_count"),
+                        static_cast<int>(this->lights.size())
                     );
 
                     // Per-Model stuff

@@ -25,7 +25,7 @@ void main() {
 
     frag_pos = world_pos.xyz;
 
-    vertex_normal = mat3(transpose(inverse(model))) * normal;
+    vertex_normal = normalize(mat3(transpose(inverse(model))) * normal);
 
     vertex_color = color;
 
