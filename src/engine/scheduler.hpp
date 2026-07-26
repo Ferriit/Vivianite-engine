@@ -40,13 +40,15 @@ namespace vivianite {
                 void* e_ctx; // Engine Reference
                 void* r_ctx; // Renderer Reference
 
+                Logging l_ctx;
+
                 bool running = true;
 
                 void add_task(Task tsk) {
                     tsk.e_ctx = this->e_ctx;
                     tsk.r_ctx = this->r_ctx;
 
-                    Logging().log(Logging::INFO, "Scheduler: Adding task #%d", tasks.size());
+                    l_ctx.log(Logging::DEBUG, "Scheduler: Adding task #%d", tasks.size());
                     
                     if ((tsk.run_type == Task::ONCE) || (tsk.run_type == Task::INTERVAL)) {
                         tsk.next_run = Time().get_time() + tsk.delay;
@@ -69,7 +71,7 @@ namespace vivianite {
                             Time::timestamp now = Time().get_time();
 
                             if ((now >= tsk.next_run) && (tsk.next_run != -1)) {
-                                Logging().log(Logging::INFO, "Scheduler: Running task #%d", i);
+                                l_ctx.log(Logging::DEBUG, "Scheduler: Running task #%d", i);
 
                                 if (tsk.run_type == Task::EVERY_FRAME) {
                                     tsk.next_run = now;

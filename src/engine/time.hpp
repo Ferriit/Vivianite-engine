@@ -86,14 +86,14 @@ namespace vivianite {
             };
         }
 
-        inline int get_timezone_offset() {
+        inline timestamp get_timezone_offset() {
             std::time_t now = std::time(nullptr);
 
             std::tm local = *std::localtime(&now);
             std::tm utc = *std::gmtime(&now);
 
             int offset = static_cast<int>(
-                std::difftime(std::mktime(&local), std::mktime(&utc))
+                std::difftime(std::mktime(&local), now)
             );
 
             return offset;
@@ -131,10 +131,9 @@ namespace vivianite {
 
         // utc timestamp -> local date_time
         inline date_time utc_to_date_time(timestamp ts) {
-            int offset = get_timezone_offset();
+            std::time_t time = ts / 1000;
 
-            std::time_t time = (ts + offset * 1000) / 1000;
-            std::tm result = *std::gmtime(&time);
+            std::tm result = *std::localtime(&time);
 
             return {
                 result.tm_year + 1900,
@@ -148,7 +147,7 @@ namespace vivianite {
         }
 
 
-        // Local date -> utc timestamp
+        // local date -> utc timestamp
         inline timestamp date_to_utc(date d) {
             std::tm tm = {};
             tm.tm_year = d.year - 1900;
@@ -161,7 +160,7 @@ namespace vivianite {
         }
 
 
-        // Local clock -> utc timestamp
+        // local clock -> utc timestamp
         inline timestamp clock_to_utc(clock c) {
             std::tm tm = {};
             tm.tm_hour = c.hour;
@@ -174,7 +173,7 @@ namespace vivianite {
         }
 
 
-        // Local date_time -> utc timestamp
+        // local date_time -> utc timestamp
         inline timestamp date_time_to_utc(date_time dt) {
             std::tm tm = {};
 

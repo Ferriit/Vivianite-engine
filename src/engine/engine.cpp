@@ -10,7 +10,6 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
-#include <iostream>
 
 namespace vivianite {
     mesh load_obj(const char* filename) {
@@ -176,6 +175,8 @@ namespace vivianite {
                 };
 
                 s_ctx.add_task(e_init);
+
+                s_ctx.l_ctx.verbose = true;
 
                 s_ctx.main_loop();
             }

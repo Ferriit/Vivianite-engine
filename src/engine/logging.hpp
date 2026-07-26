@@ -14,7 +14,8 @@ namespace vivianite {
             ERROR,
             FATAL,
             NOTICE,
-            UNMARKED
+            DEBUG,
+            UNMARKED,
         };
 
         struct log_entry {
@@ -25,6 +26,8 @@ namespace vivianite {
 
         bool colored;
 
+        bool verbose = false;
+
         std::vector<log_entry> buffer;
 
         size_t max_buffer_size = 1000;
@@ -33,6 +36,10 @@ namespace vivianite {
             : colored(colored) {}
 
         inline void log(log_level level, const char* format, ...) {
+            if ((level == log_level::DEBUG) && !verbose) {
+                return;
+            }
+
             Time::timestamp dt_UTC = Time().get_time();
             Time::date_time dt = Time().utc_to_date_time(dt_UTC);
 
@@ -61,6 +68,7 @@ namespace vivianite {
                 "\x1b[31;1m",
                 "\x1b[31;40m",
                 "\x1b[34;1m",
+                "\x1b[38;5;242m",
                 "\x1b[0m"
             };
 
@@ -82,6 +90,9 @@ namespace vivianite {
                     break;
                 case log_level::NOTICE:
                     printf("[NOTICE] ");
+                    break;
+                case log_level::DEBUG:
+                    printf("[DEBUG] ");
                     break;
                 case log_level::UNMARKED:
                     break;
