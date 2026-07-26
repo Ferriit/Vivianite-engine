@@ -1,5 +1,6 @@
 #include "renderer.hpp"
 #include "logging.hpp"
+#include "scheduler.hpp"
 
 #include <GL/gl.h>
 #include <glad/gl.h>
@@ -160,10 +161,10 @@ namespace vivianite {
 
             std::array<bool, GLFW_KEY_LAST + 1> keys = {};
             std::unordered_set<int> scancodes = {};
+            
+            vivianite::renderer r_ctx;
 
             engine() {
-                vivianite::renderer r_ctx;
-
                 if (!r_ctx.check_status()) {
                     status = 1;
                     return;
