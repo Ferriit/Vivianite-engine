@@ -68,3 +68,4 @@ Testing/
 
 build/*
 glad/
+venv/
