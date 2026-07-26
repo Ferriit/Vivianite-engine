@@ -2,38 +2,33 @@
 #include "time.hpp"
 #include "logging.hpp"
 #include <vector>
-#include <stdexcept>
 
 namespace vivianite {
     namespace Scheduler {
         struct Task {
-            enum RUNTYPE {
+            enum TASK_TYPE {
+                ASAP,
                 ONCE,
+                ABS,
                 INTERVAL,
                 EVERY_FRAME
             };
 
-            enum EXECTYPE {
-                ASAP, // As Soon As Possible
-                ABS   // Absolute time (only works in ONCE)
-            };
-
-            RUNTYPE run_type;
-            EXECTYPE exec_type;
+            TASK_TYPE run_type;
 
             Time::timestamp next_run;
             Time::timestamp interval;
             Time::timestamp delay;
-            bool enabled = false;
 
             // ENGINE REFERENCE ↓
-            void (*callback)(void*);
+            void (*callback)(void*, void*);
 
             void* e_ctx;
+            void* r_ctx;
             
             void execute() {
                 if (callback)
-                    callback(e_ctx);
+                    callback(e_ctx, r_ctx);
             }
         };
 
@@ -43,24 +38,54 @@ namespace vivianite {
             
             public:
                 void* e_ctx; // Engine Reference
+                void* r_ctx; // Renderer Reference
+
+                bool running = true;
 
                 void add_task(Task tsk) {
                     tsk.e_ctx = this->e_ctx;
+                    tsk.r_ctx = this->r_ctx;
+
+                    Logging().log(Logging::INFO, "Scheduler: Adding task #%d", tasks.size());
                     
                     if ((tsk.run_type == Task::ONCE) || (tsk.run_type == Task::INTERVAL)) {
                         tsk.next_run = Time().get_time() + tsk.delay;
                     }
-                    else if (tsk.exec_type == Task::ASAP) {
+                    else if ((tsk.run_type == Task::ASAP) || (tsk.run_type == Task::EVERY_FRAME)) {
                         tsk.next_run = Time().get_time();
                     }
 
-                    if ((tsk.exec_type == Task::ABS) && (tsk.run_type != Task::ONCE)) {
-                        Logging().log(Logging::ERROR, "Invalid task type 'ABSOLUTE, NOT-ONCE'");
-                        throw std::runtime_error("INVALID ABSOLUTE TASK");
+                    else if (tsk.run_type == Task::ABS) {
+                        tsk.next_run = tsk.delay;
                     }
-
-
+                    tasks.push_back(tsk);
                 }
+
+                void main_loop() {
+                    while (running) {
+                        for (size_t i = 0; i < this->tasks.size(); i++) {
+                            Task& tsk = this->tasks[i];
+
+                            Time::timestamp now = Time().get_time();
+
+                            if ((now >= tsk.next_run) && (tsk.next_run != -1)) {
+                                Logging().log(Logging::INFO, "Scheduler: Running task #%d", i);
+
+                                if (tsk.run_type == Task::EVERY_FRAME) {
+                                    tsk.next_run = now;
+                                }
+                                else if (tsk.run_type == Task::INTERVAL) {
+                                    tsk.next_run += tsk.interval;
+                                }
+                                else if ((tsk.run_type == Task::ONCE) || (tsk.run_type == Task::ABS) || (tsk.run_type == Task::ASAP)) {
+                                    tsk.next_run = -1; // Mark as done
+                                }
+
+                                tsk.execute();
+                            }
+                        }
+                    }
+                };
         };
     };
 };

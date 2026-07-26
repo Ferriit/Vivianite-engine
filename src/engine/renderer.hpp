@@ -86,8 +86,11 @@ namespace vivianite {
 
             double delta_time = 0.0;
             double time = 0.0;
+            double last = 0.0;
 
             Logging logger;
+
+            bool shutdown = false;
 
             static void error_callback(int error, const char* description) {
                 fprintf(stderr, "Error: %s\n", description);
@@ -322,104 +325,108 @@ namespace vivianite {
                     glm::value_ptr(this->projection)
                 );
 
-                double last = glfwGetTime();
+                this->last = glfwGetTime();
 
-                logger.log(logger.INFO, "Starting main update loop");
+                logger.log(logger.INFO, "Scheduling main update loop");
+            }
 
-                while (!glfwWindowShouldClose(window)) {
-                    glUseProgram(this->program.program);
+            static void render_update(void* engine, void* renderer) {
+                auto* r_ctx = (vivianite::renderer*)renderer;
 
-                    this->time = glfwGetTime();
-                    this->delta_time = this->time - last;
-                    last = this->time;
+                r_ctx->shutdown = glfwWindowShouldClose(r_ctx->window);
+                    
+                glUseProgram(r_ctx->program.program);
 
-                    this->update_func(this, engine_ctx);
+                r_ctx->time = glfwGetTime();
+                r_ctx->delta_time = r_ctx->time - r_ctx->last;
+                r_ctx->last = r_ctx->time;
 
-                    glm::mat4 view = glm::translate(
+                r_ctx->update_func(r_ctx, r_ctx->engine_ctx);
+
+                glm::mat4 view = glm::translate(
+                    glm::mat4(1.0f),
+                    -r_ctx->camera_pos
+                );
+
+                glUniformMatrix4fv(
+                    glGetUniformLocation(r_ctx->program.program, "view"),
+                    1,
+                    GL_FALSE,
+                    glm::value_ptr(view)
+                );
+
+                // Camera
+                glUniform3fv(
+                    glGetUniformLocation(r_ctx->program.program, "camera_pos"),
+                    1,
+                    glm::value_ptr(r_ctx->camera_pos)
+                );
+
+                // Lights
+                glUniform1i(
+                    glGetUniformLocation(r_ctx->program.program, "light_count"),
+                    static_cast<int>(r_ctx->lights.size())
+                );
+
+                // Per-Model stuff
+                for (model obj : r_ctx->render_queue) {
+                    glBindVertexArray(obj.obj.vao);
+
+                    // Translation
+                    glm::mat4 modelMat = glm::translate(
                         glm::mat4(1.0f),
-                        -this->camera_pos
+                        obj.position
+                    );
+                    
+                    // Rotation (X, Y, Z)
+                    modelMat = glm::rotate(
+                        modelMat,
+                        obj.rotation.x,
+                        glm::vec3(1.0f, 0.0f, 0.0f)
                     );
 
+                    modelMat = glm::rotate(
+                        modelMat,
+                        obj.rotation.y,
+                        glm::vec3(0.0f, 1.0f, 0.0f)
+                    );
+                    
+                    modelMat = glm::rotate(
+                        modelMat,
+                        obj.rotation.z,
+                        glm::vec3(0.0f, 0.0f, 1.0f)
+                    );
+
+                    // Upload model
                     glUniformMatrix4fv(
-                        glGetUniformLocation(this->program.program, "view"),
+                        glGetUniformLocation(r_ctx->program.program, "model"),
                         1,
                         GL_FALSE,
-                        glm::value_ptr(view)
+                        glm::value_ptr(modelMat)
                     );
 
-                    // Camera
+                    // Material
                     glUniform3fv(
-                        glGetUniformLocation(this->program.program, "camera_pos"),
+                        glGetUniformLocation(r_ctx->program.program, "material.albedo"),
                         1,
-                        glm::value_ptr(this->camera_pos)
+                        glm::value_ptr(obj.mat.albedo)
                     );
 
-                    // Lights
-                    glUniform1i(
-                        glGetUniformLocation(this->program.program, "light_count"),
-                        static_cast<int>(this->lights.size())
+                    glUniform1f(
+                        glGetUniformLocation(r_ctx->program.program, "material.shininess"),
+                        obj.mat.shininess
                     );
 
-                    // Per-Model stuff
-                    for (model obj : this->render_queue) {
-                        glBindVertexArray(obj.obj.vao);
+                    glUniform1f(
+                        glGetUniformLocation(r_ctx->program.program, "material.specularStrength"),
+                        obj.mat.specular_strength
+                    );
 
-                        // Translation
-                        glm::mat4 modelMat = glm::translate(
-                            glm::mat4(1.0f),
-                            obj.position
-                        );
-                        
-                        // Rotation (X, Y, Z)
-                        modelMat = glm::rotate(
-                            modelMat,
-                            obj.rotation.x,
-                            glm::vec3(1.0f, 0.0f, 0.0f)
-                        );
-
-                        modelMat = glm::rotate(
-                            modelMat,
-                            obj.rotation.y,
-                            glm::vec3(0.0f, 1.0f, 0.0f)
-                        );
-                        
-                        modelMat = glm::rotate(
-                            modelMat,
-                            obj.rotation.z,
-                            glm::vec3(0.0f, 0.0f, 1.0f)
-                        );
-
-                        // Upload model
-                        glUniformMatrix4fv(
-                            glGetUniformLocation(this->program.program, "model"),
-                            1,
-                            GL_FALSE,
-                            glm::value_ptr(modelMat)
-                        );
-
-                        // Material
-                        glUniform3fv(
-                            glGetUniformLocation(this->program.program, "material.albedo"),
-                            1,
-                            glm::value_ptr(obj.mat.albedo)
-                        );
-
-                        glUniform1f(
-                            glGetUniformLocation(this->program.program, "material.shininess"),
-                            obj.mat.shininess
-                        );
-
-                        glUniform1f(
-                            glGetUniformLocation(this->program.program, "material.specularStrength"),
-                            obj.mat.specular_strength
-                        );
-
-                        glDrawArrays(GL_TRIANGLES, 0, obj.obj.vertex_count);
-                    }
-
-                    glfwPollEvents();
-                    glfwSwapBuffers(window);
+                    glDrawArrays(GL_TRIANGLES, 0, obj.obj.vertex_count);
                 }
+
+                glfwPollEvents();
+                glfwSwapBuffers(r_ctx->window);
             }
 
             void exit() {

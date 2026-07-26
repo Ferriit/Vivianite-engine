@@ -164,27 +164,53 @@ namespace vivianite {
             
             vivianite::renderer r_ctx;
 
+            Scheduler::Scheduler s_ctx;
+
             engine() {
-                if (!r_ctx.check_status()) {
-                    status = 1;
+                s_ctx.e_ctx = (void*)this;
+                s_ctx.r_ctx = (void*)(&this->r_ctx);
+                
+                Scheduler::Task e_init = (Scheduler::Task) {
+                    .run_type = Scheduler::Task::ASAP,
+                    .callback = this->init,
+                };
+
+                s_ctx.add_task(e_init);
+
+                s_ctx.main_loop();
+            }
+
+            static void init(void* ctx, void* renderer) {
+                auto* e_ctx = (vivianite::engine*)ctx;
+                auto* r_ctx = &e_ctx->r_ctx;
+
+                if (!r_ctx->check_status()) {
+                    e_ctx->status = 1;
                     return;
                 }
 
-                r_ctx.initialize();
+                r_ctx->initialize();
 
-                r_ctx.program.frag_path = "assets/frag.glsl";
-                r_ctx.program.vert_path = "assets/vert.glsl";
+                r_ctx->program.frag_path = "assets/frag.glsl";
+                r_ctx->program.vert_path = "assets/vert.glsl";
 
-                r_ctx.create_shaders();
+                r_ctx->create_shaders();
 
                 Logging().log(Logging::INFO, "Assigning functions");
-                r_ctx.setup_func = this->setup;
-                r_ctx.update_func = this->update;
-                r_ctx.exit_func = this->exit;
+                r_ctx->setup_func = e_ctx->setup;
+                r_ctx->update_func = e_ctx->update;
+                r_ctx->exit_func = e_ctx->exit;
 
-                r_ctx.engine_ctx = this;
+                r_ctx->engine_ctx = e_ctx;
+                
+                Scheduler::Task main_loop_tsk = (Scheduler::Task) {
+                    .run_type=Scheduler::Task::EVERY_FRAME,
+                    .callback=r_ctx->render_update,
+                };
 
-                r_ctx.run();
+                e_ctx->s_ctx.add_task(main_loop_tsk);
+
+                r_ctx->run();
             }
 
             static void setup(vivianite::renderer* r_ctx, void* ctx) {
@@ -249,7 +275,8 @@ namespace vivianite {
                 r_ctx->render_queue[0].rotation.x += 0.03f;
                 r_ctx->render_queue[0].rotation.z += 0.03f;
 
-                if (e_ctx->keys[GLFW_KEY_ESCAPE] == true) {
+                if ((e_ctx->keys[GLFW_KEY_ESCAPE] == true) || r_ctx->shutdown) {
+                    e_ctx->s_ctx.running = false;
                     r_ctx->exit();
                 }
             }
