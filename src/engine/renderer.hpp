@@ -430,7 +430,6 @@ namespace vivianite {
             }
 
             void exit() {
-                this->exit_func(this, engine_ctx);
                 glfwSetWindowShouldClose(this->window, GLFW_TRUE);
             }
 

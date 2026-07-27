@@ -165,9 +165,13 @@ namespace vivianite {
 
             Scheduler::Scheduler s_ctx;
 
+            Logging l_ctx;
+
             engine() {
                 s_ctx.e_ctx = (void*)this;
                 s_ctx.r_ctx = (void*)(&this->r_ctx);
+
+                s_ctx.l_ctx = &l_ctx;
                 
                 Scheduler::Task e_init = (Scheduler::Task) {
                     .run_type = Scheduler::Task::ASAP,
@@ -176,7 +180,8 @@ namespace vivianite {
 
                 s_ctx.add_task(e_init);
 
-                s_ctx.l_ctx.verbose = false;
+
+                s_ctx.l_ctx->verbose = false;
 
                 s_ctx.main_loop();
             }
@@ -197,7 +202,7 @@ namespace vivianite {
 
                 r_ctx->create_shaders();
 
-                Logging().log(Logging::INFO, "Assigning functions");
+                e_ctx->l_ctx.log(Logging::INFO, "Assigning functions");
                 r_ctx->setup_func = e_ctx->setup;
                 r_ctx->update_func = e_ctx->update;
                 r_ctx->exit_func = e_ctx->exit;
@@ -231,13 +236,13 @@ namespace vivianite {
                     .specular_strength = 0.5f
                 };
 
-                Logging().log(Logging::INFO, "Uploading models");
+                e_ctx->l_ctx.log(Logging::INFO, "Uploading models");
                 r_ctx->render_queue.push_back(cube_model);
 
                 r_ctx->vsync = VIVIANITE_VSYNC_TRUE;
                 r_ctx->apply_settings();
 
-                Logging().log(Logging::INFO, "Uploading lights");
+                e_ctx->l_ctx.log(Logging::INFO, "Uploading lights");
                 // Set up lights
                 r_ctx->lights.push_back(
                     (vivianite::light){
@@ -262,7 +267,7 @@ namespace vivianite {
                 r_ctx->init_SSBOs();
 
                 glfwSetKeyCallback(r_ctx->window, e_ctx->key_callback);
-                Logging().log(Logging::log_level::NOTICE, "ENGINE SETUP DONE");
+                e_ctx->l_ctx.log(Logging::log_level::NOTICE, "ENGINE SETUP DONE");
             }
 
             static void update(vivianite::renderer* r_ctx, void* ctx) {
@@ -285,7 +290,7 @@ namespace vivianite {
             static void exit(vivianite::renderer* r_ctx, void* ctx) {
                 auto* e_ctx = (vivianite::engine*)ctx;
 
-                Logging().log(Logging::log_level::INFO, "%f FPS (%f ms)", 1 / r_ctx->delta_time, r_ctx->delta_time * 1000.0f);
+                e_ctx->l_ctx.log(Logging::log_level::INFO, "%f FPS (%f ms)", 1 / r_ctx->delta_time, r_ctx->delta_time * 1000.0f);
             }
 
         private:
