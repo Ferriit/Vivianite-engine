@@ -167,7 +167,7 @@ namespace vivianite {
 
             Logging l_ctx;
 
-            engine() {
+            engine() : r_ctx(&l_ctx) {
                 s_ctx.e_ctx = (void*)this;
                 s_ctx.r_ctx = (void*)(&this->r_ctx);
 
