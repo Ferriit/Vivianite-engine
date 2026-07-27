@@ -1,0 +1,26 @@
+#version 460 core
+
+struct Tile {
+    uint count;
+    uint offset;
+};
+
+layout(std430, binding = 1) buffer tile_buffer {
+    Tile tiles[];
+};
+
+uniform uint tiles_x;
+uniform uint tiles_y;
+uniform uint max_lights_per_tile;
+
+layout(local_size_x = 256) in;
+
+void main() {
+    uint i = gl_GlobalInvocationID.x;
+
+    if (i >= tiles_x * tiles_y)
+        return;
+
+    tiles[i].count = 0;
+    tiles[i].offset = i * max_lights_per_tile;
+}

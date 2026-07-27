@@ -40,7 +40,6 @@ namespace vivianite {
         std::string line;
 
         while (std::getline(file, line)) {
-
             if (line.rfind("v ", 0) == 0) {
                 std::stringstream ss(line.substr(2));
 
@@ -181,7 +180,7 @@ namespace vivianite {
                 s_ctx.add_task(e_init);
 
 
-                s_ctx.l_ctx->verbose = false;
+                s_ctx.l_ctx->verbose = true;
 
                 s_ctx.main_loop();
             }
@@ -203,6 +202,9 @@ namespace vivianite {
                 r_ctx->create_shaders();
 
                 r_ctx->tile_culling_program = r_ctx->create_compute_program("assets/cull.comp");
+                r_ctx->tile_culling_init_program = r_ctx->create_compute_program("assets/init_cull.comp");
+
+                r_ctx->create_depth_program("assets/depth.vert");
 
                 e_ctx->l_ctx.log(Logging::INFO, "Assigning functions");
                 r_ctx->setup_func = e_ctx->setup;
@@ -267,6 +269,8 @@ namespace vivianite {
                     }
                 );
                 r_ctx->init_SSBOs();
+
+                r_ctx->init_FBOs();
 
                 glfwSetKeyCallback(r_ctx->window, e_ctx->key_callback);
                 e_ctx->l_ctx.log(Logging::log_level::NOTICE, "ENGINE SETUP DONE");

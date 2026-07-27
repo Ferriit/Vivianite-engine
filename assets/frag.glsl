@@ -15,8 +15,21 @@ struct Light {
     float quadratic;
 };
 
+struct Tile {
+    uint count;
+    uint offset;
+};
+
 layout(std430, binding=0) buffer light_buffer {
     Light lights[];
+};
+
+layout(std430, binding = 1) buffer tile_buffer {
+    Tile tiles[];
+};
+
+layout(std430, binding = 2) buffer tile_light_buffer {
+    uint light_indices[];
 };
 
 in vec3 vertex_color;
@@ -30,6 +43,9 @@ uniform Material material;
 uniform vec3 camera_pos;
 
 uniform int light_count;
+
+uniform sampler2D depth_texture;
+uniform vec2 screen_size;
 
 vec3 blinn_phong_shading(Light l, float ambient_strength) {
     vec3 light_position = l.position.xyz;
@@ -60,18 +76,32 @@ vec3 blinn_phong_shading(Light l, float ambient_strength) {
 }
 
 void main() {
-    float ambient_strength = 0.3;
-    if (light_count > 0)
-        ambient_strength /= float(light_count);
-    
-    vec3 result = vec3(0.0);
-    for (int i = 0; i < light_count; i++) {
-        result += blinn_phong_shading(lights[i], ambient_strength);
-    }
+    uint tiles_x = uint((screen_size.x + 15.0) / 16.0);
 
-    if (light_count == 0) {
-        FragColor = vec4(1,0,0,1);
-        return;
+    uvec2 tile = uvec2(gl_FragCoord.xy) / 16u;
+    uint tile_index = tile.y * tiles_x + tile.x;
+
+    Tile tile_data = tiles[tile_index];
+
+    // if (tile_data.count == 0) {
+    //     FragColor = vec4(1, 0, 0, 1);
+    //     return;
+    // }
+
+    float ambient_strength = 0.3;
+
+    if (tile_data.count > 0)
+        ambient_strength /= float(tile_data.count);
+
+    vec3 result = vec3(0.0);
+
+    for (uint i = 0; i < tile_data.count; i++) {
+        uint light_index = light_indices[tile_data.offset + i];
+
+        result += blinn_phong_shading(
+            lights[light_index],
+            ambient_strength
+        );
     }
 
     FragColor = vec4(result, 1.0);

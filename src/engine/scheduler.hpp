@@ -71,8 +71,6 @@ namespace vivianite {
                             Time::timestamp now = Time().get_time();
 
                             if ((now >= tsk.next_run) && (tsk.next_run != -1)) {
-                                l_ctx->log(Logging::DEBUG, "Scheduler: Running task #%d", i);
-
                                 if (tsk.run_type == Task::EVERY_FRAME) {
                                     tsk.next_run = now;
                                 }

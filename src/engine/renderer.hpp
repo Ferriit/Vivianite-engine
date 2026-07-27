@@ -16,6 +16,8 @@
 #define VIVIANITE_VSYNC_FALSE 0
 #define VIVIANITE_VSYNC_HALF 2
 
+#define MAX_LIGHTS_PER_TILE 64
+
 namespace vivianite {
     struct shader {
         std::string frag_path, vert_path;
@@ -51,6 +53,13 @@ namespace vivianite {
         float quadratic;
     };
 
+    struct tile {
+        uint32_t count;
+        uint32_t offset;
+    };
+
+    static_assert(sizeof(tile) == 8);
+
     class renderer {
         public:
             int width = 800;
@@ -66,7 +75,9 @@ namespace vivianite {
 
             GLFWwindow* window;
             shader program;
+            GLuint depth_program;
             GLuint tile_culling_program;
+            GLuint tile_culling_init_program;
 
             int gl_major_version = 4;
             int gl_minor_version = 6;
@@ -84,7 +95,14 @@ namespace vivianite {
             glm::mat4 projection;
 
             std::vector<light> lights = {};
+            std::vector<tile> tiles = {};
+
             GLuint light_ssbo;
+            GLuint tile_light_ssbo;
+            GLuint tile_ssbo;
+
+            GLuint depth_fbo;
+            GLuint depth_texture;
 
             double delta_time = 0.0;
             double time = 0.0;
@@ -203,6 +221,66 @@ namespace vivianite {
                 glLinkProgram(this->program.program);
             }
 
+            void create_depth_program(std::string path) {
+                logger->log(logger->INFO, "Creating depth shader");
+
+                std::ifstream compute_file(path);
+
+                if (!compute_file.is_open()) {
+                    logger->log(logger->ERROR, "Failed to read depth shader");
+                    return;
+                }
+
+                std::string contents = std::string(
+                    (std::istreambuf_iterator<char>(compute_file)),
+                    std::istreambuf_iterator<char>()
+                );
+
+                const char* contents_cstr = contents.c_str();
+
+                compute_file.close();
+
+                GLuint shader = glCreateShader(GL_VERTEX_SHADER);
+        
+                glShaderSource(shader, 1, &contents_cstr, nullptr);        
+                glCompileShader(shader);
+
+                GLint isCompiled = 0;
+                char infoLog[512];
+
+                glGetShaderiv(shader, GL_COMPILE_STATUS, &isCompiled);
+                if(isCompiled == GL_FALSE) {
+                    glGetShaderInfoLog(shader, 512, nullptr, infoLog);
+                    logger->log(logger->ERROR, "Depth shader error:\n%512s", infoLog);
+
+                    glDeleteShader(shader); // Don't leak the shader.
+                    return;
+                }
+
+                GLuint program = glCreateProgram();
+                glAttachShader(program, shader);
+                glLinkProgram(program);
+
+                glDeleteShader(shader);
+
+                GLint isLinked = 0;
+
+                glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
+
+                if (isLinked == GL_FALSE) {
+                    glGetProgramInfoLog(program, 512, nullptr, infoLog);
+
+                    logger->log(logger->ERROR, "Depth program error:\n%s", infoLog);
+
+                    glDeleteProgram(program);
+                    glDeleteShader(shader);
+
+                    return;
+                }
+
+                this->depth_program = program;
+            }
+
             GLuint create_compute_program(std::string path) {
                 logger->log(logger->INFO, "Creating compute shader");
 
@@ -292,8 +370,10 @@ namespace vivianite {
 
             void init_SSBOs() {
                 logger->log(logger->INFO, "Uploading SSBOs");
-                glGenBuffers(1, &this->light_ssbo);
-                glBindBuffer(GL_SHADER_STORAGE_BUFFER, this->light_ssbo);
+
+                // Lights
+                glGenBuffers(1, &light_ssbo);
+                glBindBuffer(GL_SHADER_STORAGE_BUFFER, light_ssbo);
 
                 glBufferData(
                     GL_SHADER_STORAGE_BUFFER,
@@ -308,7 +388,98 @@ namespace vivianite {
                     light_ssbo
                 );
 
+                // Tiles
+                uint32_t tiles_x = (width + 15) / 16;
+                uint32_t tiles_y = (height + 15) / 16;
+                uint32_t tile_count = tiles_x * tiles_y;
+
+                this->tiles.resize(tile_count);
+
+                for (uint32_t i = 0; i < tile_count; i++) {
+                    this->tiles[i].count = 0;
+                    this->tiles[i].offset = i * MAX_LIGHTS_PER_TILE;
+                }
+
+                glGenBuffers(1, &tile_ssbo);
+                glBindBuffer(GL_SHADER_STORAGE_BUFFER, tile_ssbo);
+
+                glBufferData(
+                    GL_SHADER_STORAGE_BUFFER,
+                    tiles.size() * sizeof(tile),
+                    tiles.data(),
+                    GL_DYNAMIC_DRAW
+                );
+
+                glBindBufferBase(
+                    GL_SHADER_STORAGE_BUFFER,
+                    1,
+                    tile_ssbo
+                );
+
+                // Light indices
+                std::vector<uint32_t> light_indices(
+                    tile_count * MAX_LIGHTS_PER_TILE,
+                    0
+                );
+
+                glGenBuffers(1, &tile_light_ssbo);
+                glBindBuffer(GL_SHADER_STORAGE_BUFFER, tile_light_ssbo);
+
+                glBufferData(
+                    GL_SHADER_STORAGE_BUFFER,
+                    light_indices.size() * sizeof(uint32_t),
+                    light_indices.data(),
+                    GL_DYNAMIC_DRAW
+                );
+
+                glBindBufferBase(
+                    GL_SHADER_STORAGE_BUFFER,
+                    2,
+                    tile_light_ssbo
+                );
+
+
                 glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+            }
+
+            void init_FBOs() {
+                glGenFramebuffers(1, &depth_fbo);
+                glBindFramebuffer(GL_FRAMEBUFFER, depth_fbo);
+
+                glGenTextures(1, &depth_texture);
+                glBindTexture(GL_TEXTURE_2D, depth_texture);
+
+                glTexImage2D(
+                    GL_TEXTURE_2D,
+                    0,
+                    GL_DEPTH_COMPONENT32F,
+                    width,
+                    height,
+                    0,
+                    GL_DEPTH_COMPONENT,
+                    GL_FLOAT,
+                    nullptr
+                );
+
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+                glFramebufferTexture2D(
+                    GL_FRAMEBUFFER,
+                    GL_DEPTH_ATTACHMENT,
+                    GL_TEXTURE_2D,
+                    depth_texture,
+                    0
+                );
+
+                glDrawBuffer(GL_NONE);
+                glReadBuffer(GL_NONE);
+
+                if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+                    std::cout << "Depth FBO incomplete\n";
+                }
+
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
             }
 
             void upload_lights() {
@@ -392,12 +563,123 @@ namespace vivianite {
                 logger->log(logger->INFO, "Scheduling main update loop");
             }
 
+            void render_depth_buffer() {
+                glBindFramebuffer(GL_FRAMEBUFFER, depth_fbo);
+
+                glUseProgram(depth_program);
+
+                glViewport(0, 0, width, height);
+                glEnable(GL_DEPTH_TEST);
+                glDepthMask(GL_TRUE);
+                glDepthFunc(GL_LESS);
+                glClearDepth(1.0);
+                glClear(GL_DEPTH_BUFFER_BIT);
+
+                glEnable(GL_DEPTH_TEST);
+                glDepthMask(GL_TRUE);
+                glDepthFunc(GL_LESS);
+
+                glm::mat4 view = glm::mat4(1.0f);
+
+                view = glm::rotate(
+                    view,
+                    -this->camera_rot.x,
+                    glm::vec3(1,0,0)
+                );
+
+                view = glm::rotate(
+                    view,
+                    -this->camera_rot.y,
+                    glm::vec3(0,1,0)
+                );
+
+                view = glm::rotate(
+                    view,
+                    -this->camera_rot.z,
+                    glm::vec3(0,0,1)
+                );
+
+                view = glm::translate(
+                    view,
+                    -this->camera_pos
+                );
+
+                glUniformMatrix4fv(
+                    glGetUniformLocation(this->depth_program, "view"),
+                    1,
+                    GL_FALSE,
+                    glm::value_ptr(view)
+                );
+
+                glUniformMatrix4fv(
+                    glGetUniformLocation(this->depth_program, "projection"),
+                    1,
+                    GL_FALSE,
+                    glm::value_ptr(this->projection)
+                );
+
+                glUniform1i(
+                    glGetUniformLocation(this->tile_culling_program, "light_count"),
+                    static_cast<int>(this->lights.size())
+                );
+
+                for (model obj : this->render_queue) {
+                    glBindVertexArray(obj.obj.vao);
+
+                    // Translation
+                    glm::mat4 modelMat = glm::translate(
+                        glm::mat4(1.0f),
+                        obj.position
+                    );
+                    
+                    // Rotation (X, Y, Z)
+                    modelMat = glm::rotate(
+                        modelMat,
+                        obj.rotation.x,
+                        glm::vec3(1.0f, 0.0f, 0.0f)
+                    );
+
+                    modelMat = glm::rotate(
+                        modelMat,
+                        obj.rotation.y,
+                        glm::vec3(0.0f, 1.0f, 0.0f)
+                    );
+                    
+                    modelMat = glm::rotate(
+                        modelMat,
+                        obj.rotation.z,
+                        glm::vec3(0.0f, 0.0f, 1.0f)
+                    );
+
+                    // Upload model
+                    glUniformMatrix4fv(
+                        glGetUniformLocation(this->depth_program, "model"),
+                        1,
+                        GL_FALSE,
+                        glm::value_ptr(modelMat)
+                    );
+
+                    glDrawArrays(GL_TRIANGLES, 0, obj.obj.vertex_count);
+                }
+
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+                glViewport(
+                    0,
+                    0,
+                    this->width,
+                    this->height
+                );
+
+                glBindTexture(GL_TEXTURE_2D, depth_texture);
+            }
+
             static void render_update(void* engine, void* renderer) {
                 auto* r_ctx = (vivianite::renderer*)renderer;
 
                 r_ctx->shutdown = glfwWindowShouldClose(r_ctx->window);
                     
-                glUseProgram(r_ctx->program.program);
 
                 r_ctx->time = glfwGetTime();
                 r_ctx->delta_time = r_ctx->time - r_ctx->last;
@@ -406,29 +688,32 @@ namespace vivianite {
                 r_ctx->update_func(r_ctx, r_ctx->engine_ctx);
 
                 // Camera rotation and position
-                glm::mat4 view = glm::translate(
-                    glm::mat4(1.0f),
+                glm::mat4 view = glm::mat4(1.0f);
+
+                view = glm::rotate(
+                    view,
+                    -r_ctx->camera_rot.x,
+                    glm::vec3(1,0,0)
+                );
+
+                view = glm::rotate(
+                    view,
+                    -r_ctx->camera_rot.y,
+                    glm::vec3(0,1,0)
+                );
+
+                view = glm::rotate(
+                    view,
+                    -r_ctx->camera_rot.z,
+                    glm::vec3(0,0,1)
+                );
+
+                view = glm::translate(
+                    view,
                     -r_ctx->camera_pos
                 );
 
-                view = glm::rotate(
-                    view,
-                    r_ctx->camera_rot.x,
-                    glm::vec3(1.0f, 0.0f, 0.0f)
-                );
-                
-                view = glm::rotate(
-                    view,
-                    r_ctx->camera_rot.y,
-                    glm::vec3(0.0f, 1.0f, 0.0f)
-                );
-
-                view = glm::rotate(
-                    view,
-                    r_ctx->camera_rot.z,
-                    glm::vec3(0.0f, 0.0f, 1.0f)
-                );
-
+                glUseProgram(r_ctx->program.program);
 
                 glUniformMatrix4fv(
                     glGetUniformLocation(r_ctx->program.program, "view"),
@@ -448,6 +733,134 @@ namespace vivianite {
                 glUniform1i(
                     glGetUniformLocation(r_ctx->program.program, "light_count"),
                     static_cast<int>(r_ctx->lights.size())
+                );
+
+                glUniform2f(
+                    glGetUniformLocation(r_ctx->program.program, "screen_size"),
+                    r_ctx->width,
+                    r_ctx->height
+                );
+
+                // Get depth buffer 
+                r_ctx->render_depth_buffer();
+
+                glMemoryBarrier(
+                    GL_FRAMEBUFFER_BARRIER_BIT |
+                    GL_TEXTURE_FETCH_BARRIER_BIT
+                );
+                glBindTextureUnit(0, r_ctx->depth_texture);
+
+                // Light culling
+                glUseProgram(r_ctx->tile_culling_program);
+
+                GLint loc_tx = glGetUniformLocation(r_ctx->tile_culling_program, "tiles_x");
+                GLint loc_ty = glGetUniformLocation(r_ctx->tile_culling_program, "tiles_y");
+
+                uint32_t tiles_x = (r_ctx->width + 15) / 16;
+                uint32_t tiles_y = (r_ctx->height + 15) / 16;
+
+                r_ctx->logger->log(r_ctx->logger->DEBUG,
+                    "tiles_x loc=%d tiles_y loc=%d, values: %u %u %d",
+                    loc_tx, loc_ty, tiles_x, tiles_y, (int)r_ctx->lights.size());
+
+                glUniform1ui(loc_tx, tiles_x);
+                glUniform1ui(loc_ty, tiles_y);
+
+                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, r_ctx->tile_ssbo);
+
+                glUniform1ui(
+                    glGetUniformLocation(r_ctx->tile_culling_init_program, "tiles_x"),
+                    tiles_x
+                );
+
+                glUniform1ui(
+                    glGetUniformLocation(r_ctx->tile_culling_init_program, "tiles_y"),
+                    tiles_y
+                );
+
+                glUniform1ui(
+                    glGetUniformLocation(r_ctx->tile_culling_init_program, "max_lights_per_tile"),
+                    MAX_LIGHTS_PER_TILE
+                );
+
+                glDispatchCompute(
+                    (tiles_x * tiles_y + 255) / 256,
+                    1,
+                    1
+                );
+
+                glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+                glUseProgram(r_ctx->tile_culling_program);
+
+                loc_tx = glGetUniformLocation(r_ctx->tile_culling_program, "tiles_x");
+                loc_ty = glGetUniformLocation(r_ctx->tile_culling_program, "tiles_y");
+                GLint loc_lc = glGetUniformLocation(r_ctx->tile_culling_program, "light_count");
+
+                glUniform1ui(loc_tx, tiles_x);
+                glUniform1ui(loc_ty, tiles_y);
+                glUniform1i(loc_lc, (int)r_ctx->lights.size());
+
+                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, r_ctx->light_ssbo);
+                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, r_ctx->tile_ssbo);
+                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, r_ctx->tile_light_ssbo);
+
+                glBindTextureUnit(
+                    0,
+                    r_ctx->depth_texture
+                );
+
+                glUniform1ui(
+                    glGetUniformLocation(r_ctx->tile_culling_program, "max_lights_per_tile"),
+                    MAX_LIGHTS_PER_TILE
+                );
+                glUniform1i(
+                    glGetUniformLocation(r_ctx->tile_culling_program, "light_count"),
+                    static_cast<int>(r_ctx->lights.size())
+                );
+
+                glDispatchCompute(
+                    (tiles_x + 15) / 16,
+                    (tiles_y + 15) / 16,
+                    1
+                );
+
+                glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT);
+
+                glBindBuffer(GL_SHADER_STORAGE_BUFFER, r_ctx->tile_ssbo);
+
+                tile* ptr = (tile*)glMapBuffer(GL_SHADER_STORAGE_BUFFER,GL_READ_ONLY);
+
+                if (ptr) {
+                    uint32_t mid_tile = (tiles_y / 2) * tiles_x + (tiles_x / 2);
+
+                    r_ctx->logger->log(r_ctx->logger->DEBUG, "Tile mid (%u) count: %d", mid_tile, ptr[mid_tile].count);
+
+                    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+                }
+
+                // Actually Render
+                glUseProgram(r_ctx->program.program);
+
+                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, r_ctx->light_ssbo);
+                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, r_ctx->tile_ssbo);
+                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, r_ctx->tile_light_ssbo);
+
+                glBindBufferBase(
+                    GL_SHADER_STORAGE_BUFFER,
+                    0,
+                    r_ctx->light_ssbo
+                );
+
+                glBindBufferBase(
+                    GL_SHADER_STORAGE_BUFFER,
+                    1,
+                    r_ctx->tile_ssbo
+                );
+
+                glBindBufferBase(
+                    GL_SHADER_STORAGE_BUFFER,
+                    2,
+                    r_ctx->tile_light_ssbo
                 );
 
                 // Per-Model stuff
@@ -516,7 +929,7 @@ namespace vivianite {
             }
 
             ~renderer() {
-                logger->log(logger->NOTICE, "Exitting... Check log for errors.");
+                logger->log(logger->NOTICE, "Exiting... Check log for errors.");
                 this->exit_func(this, engine_ctx);
 
                 if (window) {
