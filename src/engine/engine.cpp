@@ -161,11 +161,11 @@ namespace vivianite {
             std::array<bool, GLFW_KEY_LAST + 1> keys = {};
             std::unordered_set<int> scancodes = {};
             
+            Logging l_ctx;
+
             vivianite::renderer r_ctx;
 
             Scheduler::Scheduler s_ctx;
-
-            Logging l_ctx;
 
             engine() : r_ctx(&l_ctx) {
                 s_ctx.e_ctx = (void*)this;
@@ -201,6 +201,8 @@ namespace vivianite {
                 r_ctx->program.vert_path = "assets/vert.glsl";
 
                 r_ctx->create_shaders();
+
+                r_ctx->tile_culling_program = r_ctx->create_compute_program("assets/cull.comp");
 
                 e_ctx->l_ctx.log(Logging::INFO, "Assigning functions");
                 r_ctx->setup_func = e_ctx->setup;

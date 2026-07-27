@@ -66,6 +66,7 @@ namespace vivianite {
 
             GLFWwindow* window;
             shader program;
+            GLuint tile_culling_program;
 
             int gl_major_version = 4;
             int gl_minor_version = 6;
@@ -79,6 +80,7 @@ namespace vivianite {
             std::vector<model> render_queue = {};
 
             glm::vec3 camera_pos = glm::vec3(0.0f, 0.0f, 5.0f);
+            glm::vec3 camera_rot = glm::vec3(0.0f, 0.0f, -1.0f);
             glm::mat4 projection;
 
             std::vector<light> lights = {};
@@ -199,6 +201,66 @@ namespace vivianite {
                 glAttachShader(this->program.program, this->program.frag);
 
                 glLinkProgram(this->program.program);
+            }
+
+            GLuint create_compute_program(std::string path) {
+                logger->log(logger->INFO, "Creating compute shader");
+
+                std::ifstream compute_file(path);
+
+                if (!compute_file.is_open()) {
+                    logger->log(logger->ERROR, "Failed to read Compute shader");
+                    return 0;
+                }
+
+                std::string contents = std::string(
+                    (std::istreambuf_iterator<char>(compute_file)),
+                    std::istreambuf_iterator<char>()
+                );
+
+                const char* contents_cstr = contents.c_str();
+
+                compute_file.close();
+
+                GLuint shader = glCreateShader(GL_COMPUTE_SHADER);
+        
+                glShaderSource(shader, 1, &contents_cstr, nullptr);        
+                glCompileShader(shader);
+
+                GLint isCompiled = 0;
+                char infoLog[512];
+
+                glGetShaderiv(shader, GL_COMPILE_STATUS, &isCompiled);
+                if(isCompiled == GL_FALSE) {
+                    glGetShaderInfoLog(shader, 512, nullptr, infoLog);
+                    logger->log(logger->ERROR, "Compute shader error:\n%512s", infoLog);
+
+                    glDeleteShader(shader); // Don't leak the shader.
+                    return 0;
+                }
+
+                GLuint program = glCreateProgram();
+                glAttachShader(program, shader);
+                glLinkProgram(program);
+
+                glDeleteShader(shader);
+
+                GLint isLinked = 0;
+
+                glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
+
+                if (isLinked == GL_FALSE) {
+                    glGetProgramInfoLog(program, 512, nullptr, infoLog);
+
+                    logger->log(logger->ERROR, "Compute program error:\n%s", infoLog);
+
+                    glDeleteProgram(program);
+                    glDeleteShader(shader);
+
+                    return 0;
+                }
+
+                return program;
             }
 
             GLuint upload_mesh(const std::vector<float> &mesh) {
@@ -343,10 +405,30 @@ namespace vivianite {
 
                 r_ctx->update_func(r_ctx, r_ctx->engine_ctx);
 
+                // Camera rotation and position
                 glm::mat4 view = glm::translate(
                     glm::mat4(1.0f),
                     -r_ctx->camera_pos
                 );
+
+                view = glm::rotate(
+                    view,
+                    r_ctx->camera_rot.x,
+                    glm::vec3(1.0f, 0.0f, 0.0f)
+                );
+                
+                view = glm::rotate(
+                    view,
+                    r_ctx->camera_rot.y,
+                    glm::vec3(0.0f, 1.0f, 0.0f)
+                );
+
+                view = glm::rotate(
+                    view,
+                    r_ctx->camera_rot.z,
+                    glm::vec3(0.0f, 0.0f, 1.0f)
+                );
+
 
                 glUniformMatrix4fv(
                     glGetUniformLocation(r_ctx->program.program, "view"),
@@ -436,9 +518,6 @@ namespace vivianite {
             ~renderer() {
                 logger->log(logger->NOTICE, "Exitting... Check log for errors.");
                 this->exit_func(this, engine_ctx);
-
-                glDeleteShader(this->program.frag);
-                glDeleteShader(this->program.vert);
 
                 if (window) {
                     glfwDestroyWindow(window);

@@ -4,7 +4,7 @@ CXX := g++
 
 CXX_GLAD := -Iglad/include glad/src/gl.c
 CXX_GLFW := $(shell pkg-config --cflags --libs glfw3) -ldl
-CXX_FLAGS := -o build/Vivianite
+CXX_FLAGS := -o build/Vivianite -g -O0
 
 CXX_SRC := src/engine/engine.cpp
 
