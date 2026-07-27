@@ -48,19 +48,13 @@ void compute_tile_depth(uint tile_index) {
     uint tile_x = tile_index % tiles_x;
     uint tile_y = tile_index / tiles_x;
 
-    // Pick a pixel inside this tile for this thread
     uint px = tile_x * 16 + gl_LocalInvocationID.x;
     uint py = tile_y * 16 + gl_LocalInvocationID.y;
 
     float depth = 1.0;
 
-    if (px < uint(screen_size.x) && py < uint(screen_size.y))
-    {
-        depth = texelFetch(
-            depth_texture,
-            ivec2(px, py),
-            0
-        ).r;
+    if (px < uint(screen_size.x) && py < uint(screen_size.y)) {
+        depth = texelFetch(depth_texture, ivec2(px, py), 0).r;
     }
 
     min_depths[local_index] = depth;
@@ -68,7 +62,6 @@ void compute_tile_depth(uint tile_index) {
 
     barrier();
 
-    // Parallel reduction
     for (uint stride = 128; stride > 0; stride >>= 1) {
         if (local_index < stride) {
             min_depths[local_index] = min(
@@ -84,6 +77,9 @@ void compute_tile_depth(uint tile_index) {
 
         barrier();
     }
+
+    // Make sure invocation 0 sees the final values
+    barrier();
 }
 
 vec3 tile_corner_world_position(uint tile_index, float depth, vec2 corner) {
@@ -165,19 +161,16 @@ bool light_intersects_tile(uint tile_index, Light light) {
 }
 
 void add_light_to_tile(uint tile_index, uint light_index) {
-    uint index = atomicAdd(tiles[tile_index].count, 1);
+    uint index = tiles[tile_index].count++;
 
     if (index < max_lights_per_tile) {
         light_indices[tiles[tile_index].offset + index] = light_index;
     }
-    else {
-        atomicMin(tiles[tile_index].count, max_lights_per_tile);
-    }
 }
 
 void main() {
-    uint tile_x = gl_GlobalInvocationID.x;
-    uint tile_y = gl_GlobalInvocationID.y;
+    uint tile_x = gl_WorkGroupID.x;
+    uint tile_y = gl_WorkGroupID.y;
 
     if (tile_x >= tiles_x || tile_y >= tiles_y)
         return;
@@ -186,9 +179,17 @@ void main() {
 
     compute_tile_depth(tile_index);
 
-    for (uint i = 0; i < light_count; i++) {
-        if (light_intersects_tile(tile_index, lights[i])) {
-            add_light_to_tile(tile_index, i);
+    if (gl_LocalInvocationIndex == 0)
+        tiles[tile_index].count = 0;
+
+    barrier();
+
+    if (gl_LocalInvocationIndex == 0) {
+        for (uint i = 0; i < light_count; i++) {
+            if (light_intersects_tile(tile_index, lights[i])) {
+            //if (lights[i].position.x == lights[2].position.x) {
+                add_light_to_tile(tile_index, i);
+            }
         }
     }
 }

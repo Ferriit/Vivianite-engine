@@ -766,7 +766,9 @@ namespace vivianite {
                 glUniform1ui(loc_tx, tiles_x);
                 glUniform1ui(loc_ty, tiles_y);
 
+                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, r_ctx->light_ssbo);
                 glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, r_ctx->tile_ssbo);
+                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, r_ctx->tile_light_ssbo);
 
                 glUniform1ui(
                     glGetUniformLocation(r_ctx->tile_culling_init_program, "tiles_x"),
@@ -813,14 +815,14 @@ namespace vivianite {
                     glGetUniformLocation(r_ctx->tile_culling_program, "max_lights_per_tile"),
                     MAX_LIGHTS_PER_TILE
                 );
-                glUniform1i(
+                glUniform1ui(
                     glGetUniformLocation(r_ctx->tile_culling_program, "light_count"),
                     static_cast<int>(r_ctx->lights.size())
                 );
 
                 glDispatchCompute(
-                    (tiles_x + 15) / 16,
-                    (tiles_y + 15) / 16,
+                    tiles_x,
+                    tiles_y,
                     1
                 );
 

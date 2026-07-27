@@ -268,6 +268,16 @@ namespace vivianite {
                         .quadratic=0.032f
                     }
                 );
+                r_ctx->lights.push_back(
+                    (vivianite::light){
+                        .position=glm::vec4(0.0f, -5.0f, 0.0f, 1.0f),
+                        .color=glm::vec4(0.0f, 1.0f, 0.0f, 1.0f),
+                        .radius=50.0f,
+                        .strength=1.0f,
+                        .linear=0.09f,
+                        .quadratic=0.032f
+                    }
+                );
                 r_ctx->init_SSBOs();
 
                 r_ctx->init_FBOs();
