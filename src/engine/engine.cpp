@@ -180,7 +180,12 @@ namespace vivianite {
                 s_ctx.add_task(e_init);
 
 
-                s_ctx.l_ctx->verbose = true;
+                #ifndef DEBUG
+                s_ctx.l_ctx->verbose = false;
+                #endif
+                #ifdef DEBUG
+                s_ctx.l_ctx ->verbose = true;
+                #endif
 
                 s_ctx.main_loop();
             }
