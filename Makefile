@@ -23,4 +23,4 @@ run: engine
 	./build/Vivianite
 
 clean:
-	rm -rf build/
+	rm -rf build/ glad/
