@@ -18,7 +18,7 @@ engine: glad
 
 engine_dbg: glad
 	mkdir -p build/
-	$(CXX) $(CXX_SRC) $(CXX_GLAD) $(CXX_GLFW) $(CXX_FLAGS) -DDEBUG -O0 -g
+	$(CXX) $(CXX_SRC) $(CXX_GLAD) $(CXX_GLFW) $(CXX_FLAGS) -DDBG -O0 -g
 
 glad:
 	glad --api gl:core=$(GL_VERSION) --out-path glad c --loader

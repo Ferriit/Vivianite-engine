@@ -180,10 +180,10 @@ namespace vivianite {
                 s_ctx.add_task(e_init);
 
 
-                #ifndef DEBUG
+                #ifndef DBG
                 s_ctx.l_ctx->verbose = false;
                 #endif
-                #ifdef DEBUG
+                #ifdef DBG
                 s_ctx.l_ctx ->verbose = true;
                 #endif
 
