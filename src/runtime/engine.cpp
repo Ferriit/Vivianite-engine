@@ -1,13 +1,5 @@
 #include "include.hpp"
 
-#include <GL/gl.h>
-#include <glad/gl.h>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <vector>
-#include <fstream>
-#include <sstream>
 
 namespace vivianite {
     mesh load_obj(const char* filename) {
@@ -151,187 +143,172 @@ namespace vivianite {
         };
     }
 
-    class engine {
-        public:
-            int status = 0;
+    engine::engine() : r_ctx(&l_ctx) {
+        s_ctx.e_ctx = (void*)this;
+        s_ctx.r_ctx = (void*)(&this->r_ctx);
 
-            std::array<bool, GLFW_KEY_LAST + 1> keys = {};
-            std::unordered_set<int> scancodes = {};
-            
-            Logging l_ctx;
+        s_ctx.l_ctx = &l_ctx;
+        
+        Scheduler::Task e_init = (Scheduler::Task) {
+            .run_type = Scheduler::Task::ASAP,
+            .callback = this->init,
+        };
 
-            vivianite::renderer r_ctx;
-
-            Scheduler::Scheduler s_ctx;
-
-            engine() : r_ctx(&l_ctx) {
-                s_ctx.e_ctx = (void*)this;
-                s_ctx.r_ctx = (void*)(&this->r_ctx);
-
-                s_ctx.l_ctx = &l_ctx;
-                
-                Scheduler::Task e_init = (Scheduler::Task) {
-                    .run_type = Scheduler::Task::ASAP,
-                    .callback = this->init,
-                };
-
-                s_ctx.add_task(e_init);
+        s_ctx.add_task(e_init);
 
 
-                #ifndef DBG
-                s_ctx.l_ctx->verbose = false;
-                #endif
-                #ifdef DBG
-                s_ctx.l_ctx ->verbose = true;
-                #endif
+        #ifndef DBG
+        s_ctx.l_ctx->verbose = false;
+        #endif
+        #ifdef DBG
+        s_ctx.l_ctx ->verbose = true;
+        #endif
 
-                s_ctx.main_loop();
+        s_ctx.main_loop();
+    }
+
+    void engine::init(void* ctx, void* renderer) {
+        auto* e_ctx = (vivianite::engine*)ctx;
+        auto* r_ctx = &e_ctx->r_ctx;
+
+        if (!r_ctx->check_status()) {
+            e_ctx->status = 1;
+            return;
+        }
+
+        r_ctx->initialize();
+
+        r_ctx->program.frag_path = "assets/frag.glsl";
+        r_ctx->program.vert_path = "assets/vert.glsl";
+
+        r_ctx->create_shaders();
+
+        r_ctx->tile_culling_program = r_ctx->create_compute_program("assets/cull.comp");
+        r_ctx->tile_culling_init_program = r_ctx->create_compute_program("assets/init_cull.comp");
+
+        r_ctx->create_depth_program("assets/depth.vert");
+
+        e_ctx->l_ctx.log(Logging::INFO, "Assigning functions");
+        r_ctx->setup_func = e_ctx->setup;
+        r_ctx->update_func = e_ctx->update;
+        r_ctx->exit_func = e_ctx->exit;
+
+        r_ctx->engine_ctx = e_ctx;
+        
+        Scheduler::Task main_loop_tsk = (Scheduler::Task) {
+            .run_type=Scheduler::Task::EVERY_FRAME,
+            .callback=r_ctx->render_update,
+        };
+
+        e_ctx->s_ctx.add_task(main_loop_tsk);
+
+        r_ctx->run();
+    }
+
+    void engine::setup(vivianite::renderer* r_ctx, void* ctx) {
+        auto* e_ctx = (vivianite::engine*)ctx;
+
+        // Set up cube
+        vivianite::mesh cube_obj = vivianite::load_obj("assets/cube.obj");
+        GLuint cube = r_ctx->upload_mesh(cube_obj.vertices);
+
+        cube_obj.vao = cube;
+
+        vivianite::model cube_model = {.obj=cube_obj, .position=glm::vec3(0.0f, 0.0f, 0.0f)};
+
+        cube_model.mat = (vivianite::material){
+            .albedo = glm::vec3(1.0f, 1.0f, 1.0f),
+            .shininess = 32.0f,
+            .specular_strength = 0.5f
+        };
+
+        e_ctx->l_ctx.log(Logging::INFO, "Uploading models");
+        r_ctx->render_queue.push_back(cube_model);
+
+        r_ctx->vsync = VIVIANITE_VSYNC_TRUE;
+        r_ctx->apply_settings();
+
+        e_ctx->l_ctx.log(Logging::INFO, "Uploading lights");
+        // Set up lights
+        r_ctx->lights.push_back(
+            (vivianite::light){
+                .position=glm::vec4(-5.0f, 0.0f, 0.0f, 1.0f),
+                .color=glm::vec4(0.0f, 1.0f, 1.0f, 1.0f),
+                .radius=50.0f,
+                .strength=1.0f,
+                .linear=0.09f,
+                .quadratic=0.032f
             }
-
-            static void init(void* ctx, void* renderer) {
-                auto* e_ctx = (vivianite::engine*)ctx;
-                auto* r_ctx = &e_ctx->r_ctx;
-
-                if (!r_ctx->check_status()) {
-                    e_ctx->status = 1;
-                    return;
-                }
-
-                r_ctx->initialize();
-
-                r_ctx->program.frag_path = "assets/frag.glsl";
-                r_ctx->program.vert_path = "assets/vert.glsl";
-
-                r_ctx->create_shaders();
-
-                r_ctx->tile_culling_program = r_ctx->create_compute_program("assets/cull.comp");
-                r_ctx->tile_culling_init_program = r_ctx->create_compute_program("assets/init_cull.comp");
-
-                r_ctx->create_depth_program("assets/depth.vert");
-
-                e_ctx->l_ctx.log(Logging::INFO, "Assigning functions");
-                r_ctx->setup_func = e_ctx->setup;
-                r_ctx->update_func = e_ctx->update;
-                r_ctx->exit_func = e_ctx->exit;
-
-                r_ctx->engine_ctx = e_ctx;
-                
-                Scheduler::Task main_loop_tsk = (Scheduler::Task) {
-                    .run_type=Scheduler::Task::EVERY_FRAME,
-                    .callback=r_ctx->render_update,
-                };
-
-                e_ctx->s_ctx.add_task(main_loop_tsk);
-
-                r_ctx->run();
+        );
+        r_ctx->lights.push_back(
+            (vivianite::light){
+                .position=glm::vec4(5.0f, 0.0f, 0.0f, 1.0f),
+                .color=glm::vec4(1.0f, 0.0f, 0.0f, 1.0f),
+                .radius=50.0f,
+                .strength=1.0f,
+                .linear=0.09f,
+                .quadratic=0.032f
             }
-
-            static void setup(vivianite::renderer* r_ctx, void* ctx) {
-                auto* e_ctx = (vivianite::engine*)ctx;
-
-                // Set up cube
-                vivianite::mesh cube_obj = vivianite::load_obj("assets/cube.obj");
-                GLuint cube = r_ctx->upload_mesh(cube_obj.vertices);
-
-                cube_obj.vao = cube;
-
-                vivianite::model cube_model = {.obj=cube_obj, .position=glm::vec3(0.0f, 0.0f, 0.0f)};
-
-                cube_model.mat = (vivianite::material){
-                    .albedo = glm::vec3(1.0f, 1.0f, 1.0f),
-                    .shininess = 32.0f,
-                    .specular_strength = 0.5f
-                };
-
-                e_ctx->l_ctx.log(Logging::INFO, "Uploading models");
-                r_ctx->render_queue.push_back(cube_model);
-
-                r_ctx->vsync = VIVIANITE_VSYNC_TRUE;
-                r_ctx->apply_settings();
-
-                e_ctx->l_ctx.log(Logging::INFO, "Uploading lights");
-                // Set up lights
-                r_ctx->lights.push_back(
-                    (vivianite::light){
-                        .position=glm::vec4(-5.0f, 0.0f, 0.0f, 1.0f),
-                        .color=glm::vec4(0.0f, 1.0f, 1.0f, 1.0f),
-                        .radius=50.0f,
-                        .strength=1.0f,
-                        .linear=0.09f,
-                        .quadratic=0.032f
-                    }
-                );
-                r_ctx->lights.push_back(
-                    (vivianite::light){
-                        .position=glm::vec4(5.0f, 0.0f, 0.0f, 1.0f),
-                        .color=glm::vec4(1.0f, 0.0f, 0.0f, 1.0f),
-                        .radius=50.0f,
-                        .strength=1.0f,
-                        .linear=0.09f,
-                        .quadratic=0.032f
-                    }
-                );
-                r_ctx->lights.push_back(
-                    (vivianite::light){
-                        .position=glm::vec4(0.0f, -5.0f, 0.0f, 1.0f),
-                        .color=glm::vec4(0.0f, 1.0f, 0.0f, 1.0f),
-                        .radius=50.0f,
-                        .strength=1.0f,
-                        .linear=0.09f,
-                        .quadratic=0.032f
-                    }
-                );
-                r_ctx->init_SSBOs();
-
-                r_ctx->init_FBOs();
-
-                glfwSetKeyCallback(r_ctx->window, e_ctx->key_callback);
-                e_ctx->l_ctx.log(Logging::log_level::NOTICE, "ENGINE SETUP DONE");
+        );
+        r_ctx->lights.push_back(
+            (vivianite::light){
+                .position=glm::vec4(0.0f, -5.0f, 0.0f, 1.0f),
+                .color=glm::vec4(0.0f, 1.0f, 0.0f, 1.0f),
+                .radius=50.0f,
+                .strength=1.0f,
+                .linear=0.09f,
+                .quadratic=0.032f
             }
+        );
+        r_ctx->init_SSBOs();
 
-            static void update(vivianite::renderer* r_ctx, void* ctx) {
-                auto* e_ctx = (vivianite::engine*)ctx;
+        r_ctx->init_FBOs();
 
-                glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glfwSetKeyCallback(r_ctx->window, e_ctx->key_callback);
+        e_ctx->l_ctx.log(Logging::log_level::NOTICE, "ENGINE SETUP DONE");
+    }
 
-                // Rotate
-                r_ctx->render_queue[0].rotation.y += 0.03f;  
-                r_ctx->render_queue[0].rotation.x += 0.03f;
-                r_ctx->render_queue[0].rotation.z += 0.03f;
+    void engine::update(vivianite::renderer* r_ctx, void* ctx) {
+        auto* e_ctx = (vivianite::engine*)ctx;
 
-                if ((e_ctx->keys[GLFW_KEY_ESCAPE] == true) || r_ctx->shutdown) {
-                    e_ctx->s_ctx.running = false;
-                    r_ctx->exit();
-                }
-            }
+        glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            static void exit(vivianite::renderer* r_ctx, void* ctx) {
-                auto* e_ctx = (vivianite::engine*)ctx;
+        // Rotate
+        r_ctx->render_queue[0].rotation.y += 0.03f;  
+        r_ctx->render_queue[0].rotation.x += 0.03f;
+        r_ctx->render_queue[0].rotation.z += 0.03f;
 
-                e_ctx->l_ctx.log(Logging::log_level::INFO, "%f FPS (%f ms)", 1 / r_ctx->delta_time, r_ctx->delta_time * 1000.0f);
-            }
+        if ((e_ctx->keys[GLFW_KEY_ESCAPE] == true) || r_ctx->shutdown) {
+            e_ctx->s_ctx.running = false;
+            r_ctx->exit();
+        }
+    }
 
-        private:
-            static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-                auto* r_ctx = static_cast<vivianite::renderer*>(glfwGetWindowUserPointer(window));
-                if (!r_ctx)
-                    return;
+    void engine::exit(vivianite::renderer* r_ctx, void* ctx) {
+        auto* e_ctx = (vivianite::engine*)ctx;
 
-                auto* e_ctx = static_cast<vivianite::engine*>(r_ctx->engine_ctx);
-                if (!e_ctx)
-                    return;
+        e_ctx->l_ctx.log(Logging::log_level::INFO, "%f FPS (%f ms)", 1 / r_ctx->delta_time, r_ctx->delta_time * 1000.0f);
+    }
 
-                if (action == GLFW_PRESS) {
-                    e_ctx->keys[key] = true;
-                    e_ctx->scancodes.insert(scancode);
-                }
-                else if (action == GLFW_RELEASE) {
-                    e_ctx->keys[key] = false;
-                    e_ctx->scancodes.erase(scancode);
-                }
-            }
-    };
+    void engine::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+        auto* r_ctx = static_cast<vivianite::renderer*>(glfwGetWindowUserPointer(window));
+        if (!r_ctx)
+            return;
+
+        auto* e_ctx = static_cast<vivianite::engine*>(r_ctx->engine_ctx);
+        if (!e_ctx)
+            return;
+
+        if (action == GLFW_PRESS) {
+            e_ctx->keys[key] = true;
+            e_ctx->scancodes.insert(scancode);
+        }
+        else if (action == GLFW_RELEASE) {
+            e_ctx->keys[key] = false;
+            e_ctx->scancodes.erase(scancode);
+        }
+    }
 };
 
 

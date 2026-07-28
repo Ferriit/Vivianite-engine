@@ -7,12 +7,17 @@
 #include <string>
 
 #include <glad/gl.h>
+#include <GL/gl.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #include <fstream>
 #include <bits/stdc++.h>
+
+#include <cstdlib>
+#include <cstring>
+#include <sstream>
 
 #define VIVIANITE_VSYNC_TRUE 1
 #define VIVIANITE_VSYNC_FALSE 0
@@ -292,5 +297,35 @@ namespace vivianite {
             ~renderer();
 
             bool check_status();
+    };
+
+    // ENGINE
+    mesh load_obj(const char* filename);
+
+    class engine {
+        public:
+            int status = 0;
+
+            std::array<bool, GLFW_KEY_LAST + 1> keys = {};
+            std::unordered_set<int> scancodes = {};
+            
+            Logging l_ctx;
+
+            vivianite::renderer r_ctx;
+
+            Scheduler::Scheduler s_ctx;
+
+            engine();
+
+            static void init(void* ctx, void* renderer);
+
+            static void setup(vivianite::renderer* r_ctx, void* ctx);
+
+            static void update(vivianite::renderer* r_ctx, void* ctx);
+
+            static void exit(vivianite::renderer* r_ctx, void* ctx);
+
+        private:
+            static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
     };
 }
