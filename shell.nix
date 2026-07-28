@@ -12,7 +12,6 @@ pkgs.mkShell {
   ];
 
   shellHook = ''
-    set -x
     set +e
 
     if [ ! -d .venv ]; then

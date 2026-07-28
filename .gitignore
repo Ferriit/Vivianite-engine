@@ -69,3 +69,4 @@ Testing/
 build/*
 glad/
 venv/
+.venv/
