@@ -60,7 +60,7 @@ namespace vivianite {
         std::time_t now = std::time(nullptr);
 
         std::tm local = *std::localtime(&now);
-        std::tm utc = *std::gmtime(&now);
+        //std::tm utc = *std::gmtime(&now);
 
         int offset = static_cast<int>(
             std::difftime(std::mktime(&local), now)
