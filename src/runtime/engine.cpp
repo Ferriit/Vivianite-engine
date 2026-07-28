@@ -1,6 +1,4 @@
-#include "renderer.hpp"
-#include "logging.hpp"
-#include "scheduler.hpp"
+#include "include.hpp"
 
 #include <GL/gl.h>
 #include <glad/gl.h>
