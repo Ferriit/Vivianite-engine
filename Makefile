@@ -6,7 +6,7 @@ CXX_GLAD := -Iglad/include glad/src/gl.c
 CXX_GLFW := $(shell pkg-config --cflags --libs glfw3) -ldl
 CXX_FLAGS := -o build/Vivianite
 
-CXX_SRC := src/engine/engine.cpp
+CXX_SRC := src/runtime/engine.cpp
 
 .PHONY: default glad engine run clean
 
