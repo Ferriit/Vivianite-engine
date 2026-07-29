@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(Vivianite)
+project(Vivianite LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(ENABLE_LTO "Enable link-time optimization" OFF)
 
@@ -15,31 +16,39 @@ if(ENABLE_LTO)
     endif()
 endif()
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_compile_options(-O0 -g -Wall -Wextra)
-endif()
+# Disable GLFW extras
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    add_compile_options(-O3)
-    add_compile_options(-flto=auto)
-endif()
-
-find_package(OpenGL REQUIRED)
-find_package(glfw3 REQUIRED)
-find_package(glm REQUIRED)
+# Build GLFW from submodule/source
+add_subdirectory(external/glfw)
 
 file(GLOB_RECURSE SOURCES
     src/runtime/*.cpp
 )
 
+# GLAD
 add_library(glad
-    glad/src/gl.c
+    external/glad/src/gl.c
 )
 
 target_include_directories(glad PUBLIC
-    glad/include
+    external/glad/include
 )
 
+# GLM (header-only)
+add_library(glm INTERFACE)
+
+target_include_directories(glm INTERFACE
+    external/glm
+)
+
+# OpenGL
+find_package(OpenGL REQUIRED)
+
+# Executable
 add_executable(Vivianite
     ${SOURCES}
 )
@@ -50,6 +59,29 @@ target_include_directories(Vivianite PRIVATE
 
 target_link_libraries(Vivianite PRIVATE
     glad
+    glm
     glfw
     OpenGL::GL
 )
+
+if(MSVC)
+    target_compile_options(Vivianite PRIVATE
+        /W4
+    )
+else()
+    target_compile_options(Vivianite PRIVATE
+        -Wall
+        -Wextra
+    )
+
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        target_compile_options(Vivianite PRIVATE
+            -O0
+            -g
+        )
+    elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+        target_compile_options(Vivianite PRIVATE
+            -O3
+        )
+    endif()
+endif()

@@ -9,7 +9,7 @@ namespace vivianite {
         glfwSetKeyCallback(r_ctx->window, key_callback);
     }
 
-    void Input::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    void Input::key_callback(GLFWwindow* window, int key, [[maybe_unused]]int scancode, int action, int mods) {
         vivianite::renderer* r_ctx = (renderer*)glfwGetWindowUserPointer(window);
 
         Input* i_ctx = r_ctx->i_ctx;

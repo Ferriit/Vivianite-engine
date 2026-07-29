@@ -6,7 +6,7 @@
 #include <cstdio>
 #include <string>
 
-#include <glad/gl.h>
+#include "../../external/glad/include/glad/gl.h"
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>

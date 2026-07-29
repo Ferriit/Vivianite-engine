@@ -68,6 +68,5 @@ Testing/
 
 build/
 dist/
-glad/
 venv/
 .venv/
