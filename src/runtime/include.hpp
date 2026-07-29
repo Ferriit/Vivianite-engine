@@ -128,7 +128,7 @@ namespace vivianite {
             Time::timestamp delay;
 
             // ENGINE REFERENCE ↓
-            void (*callback)(void*, void*);
+            std::function<void()> callback;
 
             void* e_ctx;
             void* r_ctx;
@@ -141,7 +141,6 @@ namespace vivianite {
                 std::vector<Task> tasks;
             
             public:
-                void* e_ctx; // Engine Reference
                 void* r_ctx; // Renderer Reference
 
                 Logging* l_ctx = nullptr;
@@ -154,15 +153,118 @@ namespace vivianite {
         };
     };
 
+    enum KeyType {
+        // Letters
+        K_a, K_b, K_c, K_d, K_e, K_f, K_g,
+        K_h, K_i, K_j, K_k, K_l, K_m, K_n,
+        K_o, K_p, K_q, K_r, K_s, K_t, K_u,
+        K_v, K_w, K_x, K_y, K_z,
+
+        // Numbers
+        K_0, K_1, K_2, K_3, K_4,
+        K_5, K_6, K_7, K_8, K_9,
+
+        // Function keys
+        K_f1, K_f2, K_f3, K_f4, K_f5, K_f6,
+        K_f7, K_f8, K_f9, K_f10, K_f11, K_f12,
+
+        // Arrow keys
+        K_up,
+        K_down,
+        K_left,
+        K_right,
+
+        // Navigation
+        K_insert,
+        K_delete,
+        K_home,
+        K_end,
+        K_page_up,
+        K_page_down,
+
+        // Modifiers
+        K_left_shift,
+        K_right_shift,
+        K_left_control,
+        K_right_control,
+        K_left_alt,
+        K_right_alt,
+        K_left_super,
+        K_right_super,
+
+        // Whitespace
+        K_space,
+        K_tab,
+        K_enter,
+        K_backspace,
+        K_escape,
+
+        // Symbols
+        K_apostrophe,
+        K_comma,
+        K_minus,
+        K_period,
+        K_slash,
+        K_semicolon,
+        K_equal,
+        K_left_bracket,
+        K_right_bracket,
+        K_backslash,
+        K_grave_accent,
+
+        // Lock keys
+        K_caps_lock,
+        K_scroll_lock,
+        K_num_lock,
+
+        // Numpad
+        K_num_0,
+        K_num_1,
+        K_num_2,
+        K_num_3,
+        K_num_4,
+        K_num_5,
+        K_num_6,
+        K_num_7,
+        K_num_8,
+        K_num_9,
+
+        K_num_decimal,
+        K_num_divide,
+        K_num_multiply,
+        K_num_subtract,
+        K_num_add,
+        K_num_enter,
+        K_num_equal,
+
+        // Misc
+        K_print_screen,
+        K_pause,
+
+        K_unknown
+    };
+
+    enum KeyAction {
+        KEY_DOWN,
+        KEY_UP,
+        KEY_REPEAT
+    };
+    
+    struct KeyEvent {
+        KeyType key;
+        KeyAction action;
+        int mods;
+    };
+
     class Input {
         public:
-            // e_ctx, r_ctx
-            std::vector<void (*)(void*, void*)> key_callbacks;
+            std::vector<std::function<void(KeyEvent)>> key_callbacks;
             
             void* r_ptr = nullptr;
-            void* e_ptr = nullptr;
 
             Input();
+
+            KeyType glfw_to_keytype(int key);
 
             static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
     };
@@ -231,9 +333,9 @@ namespace vivianite {
             int gl_major_version = 4;
             int gl_minor_version = 6;
 
-            void (*update_func)(vivianite::renderer*, void*);
-            void (*setup_func)(vivianite::renderer*, void*);
-            void (*exit_func)(vivianite::renderer*, void*);
+            std::function<void()> update_func;
+            std::function<void()> setup_func;
+            std::function<void()> exit_func;
 
             void* engine_ctx;
             Input* i_ctx = nullptr;
@@ -290,7 +392,7 @@ namespace vivianite {
 
             void render_depth_buffer();
 
-            static void render_update(void* engine, void* renderer);
+            void render_update();
 
             void exit();
 
@@ -317,13 +419,13 @@ namespace vivianite {
 
             engine();
 
-            static void init(void* ctx, void* renderer);
+            void init();
 
-            static void setup(vivianite::renderer* r_ctx, void* ctx);
+            void setup();
 
-            static void update(vivianite::renderer* r_ctx, void* ctx);
+            void update();
 
-            static void exit(vivianite::renderer* r_ctx, void* ctx);
+            void exit();
 
         private:
             static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);

@@ -4,11 +4,10 @@ namespace vivianite {
     namespace Scheduler {
         void Task::execute() {
             if (callback)
-                callback(e_ctx, r_ctx);
+                callback();
         }
         
         void Scheduler::add_task(Task tsk) {
-            tsk.e_ctx = this->e_ctx;
             tsk.r_ctx = this->r_ctx;
 
             l_ctx->log(Logging::INFO, "Scheduler: Adding task #%d", tasks.size());

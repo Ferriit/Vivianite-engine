@@ -144,14 +144,15 @@ namespace vivianite {
     }
 
     engine::engine() : r_ctx(&l_ctx) {
-        s_ctx.e_ctx = (void*)this;
         s_ctx.r_ctx = (void*)(&this->r_ctx);
 
         s_ctx.l_ctx = &l_ctx;
         
         Scheduler::Task e_init = (Scheduler::Task) {
             .run_type = Scheduler::Task::ASAP,
-            .callback = this->init,
+            .callback = [this]() {
+                this->init();
+            },
         };
 
         s_ctx.add_task(e_init);
@@ -167,50 +168,47 @@ namespace vivianite {
         s_ctx.main_loop();
     }
 
-    void engine::init(void* ctx, void* renderer) {
-        auto* e_ctx = (vivianite::engine*)ctx;
-        auto* r_ctx = &e_ctx->r_ctx;
-
-        if (!r_ctx->check_status()) {
-            e_ctx->status = 1;
+    void engine::init() {
+        if (!r_ctx.check_status()) {
+            this->status = 1;
             return;
         }
 
-        r_ctx->initialize();
+        r_ctx.initialize();
 
-        r_ctx->program.frag_path = "assets/frag.glsl";
-        r_ctx->program.vert_path = "assets/vert.glsl";
+        r_ctx.program.frag_path = "assets/frag.glsl";
+        r_ctx.program.vert_path = "assets/vert.glsl";
 
-        r_ctx->create_shaders();
+        r_ctx.create_shaders();
 
-        r_ctx->tile_culling_program = r_ctx->create_compute_program("assets/cull.comp");
-        r_ctx->tile_culling_init_program = r_ctx->create_compute_program("assets/init_cull.comp");
+        r_ctx.tile_culling_program = r_ctx.create_compute_program("assets/cull.comp");
+        r_ctx.tile_culling_init_program = r_ctx.create_compute_program("assets/init_cull.comp");
 
-        r_ctx->create_depth_program("assets/depth.vert");
+        r_ctx.create_depth_program("assets/depth.vert");
 
-        e_ctx->l_ctx.log(Logging::INFO, "Assigning functions");
-        r_ctx->setup_func = e_ctx->setup;
-        r_ctx->update_func = e_ctx->update;
-        r_ctx->exit_func = e_ctx->exit;
+        this->l_ctx.log(Logging::INFO, "Assigning functions");
+        r_ctx.setup_func = [this]() {this->setup();};
+        r_ctx.update_func = [this]() {this->update();};
+        r_ctx.exit_func = [this]() {this->exit();};
 
-        r_ctx->engine_ctx = e_ctx;
+        r_ctx.engine_ctx = this;
         
         Scheduler::Task main_loop_tsk = (Scheduler::Task) {
             .run_type=Scheduler::Task::EVERY_FRAME,
-            .callback=r_ctx->render_update,
+            .callback=[this]() {
+                r_ctx.render_update();
+            },
         };
 
-        e_ctx->s_ctx.add_task(main_loop_tsk);
+        this->s_ctx.add_task(main_loop_tsk);
 
-        r_ctx->run();
+        r_ctx.run();
     }
 
-    void engine::setup(vivianite::renderer* r_ctx, void* ctx) {
-        auto* e_ctx = (vivianite::engine*)ctx;
-
+    void engine::setup() {
         // Set up cube
         vivianite::mesh cube_obj = vivianite::load_obj("assets/cube.obj");
-        GLuint cube = r_ctx->upload_mesh(cube_obj.vertices);
+        GLuint cube = r_ctx.upload_mesh(cube_obj.vertices);
 
         cube_obj.vao = cube;
 
@@ -222,15 +220,15 @@ namespace vivianite {
             .specular_strength = 0.5f
         };
 
-        e_ctx->l_ctx.log(Logging::INFO, "Uploading models");
-        r_ctx->render_queue.push_back(cube_model);
+        l_ctx.log(Logging::INFO, "Uploading models");
+        r_ctx.render_queue.push_back(cube_model);
 
-        r_ctx->vsync = VIVIANITE_VSYNC_TRUE;
-        r_ctx->apply_settings();
+        r_ctx.vsync = VIVIANITE_VSYNC_TRUE;
+        r_ctx.apply_settings();
 
-        e_ctx->l_ctx.log(Logging::INFO, "Uploading lights");
+        l_ctx.log(Logging::INFO, "Uploading lights");
         // Set up lights
-        r_ctx->lights.push_back(
+        r_ctx.lights.push_back(
             (vivianite::light){
                 .position=glm::vec4(-5.0f, 0.0f, 0.0f, 1.0f),
                 .color=glm::vec4(0.0f, 1.0f, 1.0f, 1.0f),
@@ -240,7 +238,7 @@ namespace vivianite {
                 .quadratic=0.032f
             }
         );
-        r_ctx->lights.push_back(
+        r_ctx.lights.push_back(
             (vivianite::light){
                 .position=glm::vec4(5.0f, 0.0f, 0.0f, 1.0f),
                 .color=glm::vec4(1.0f, 0.0f, 0.0f, 1.0f),
@@ -250,7 +248,7 @@ namespace vivianite {
                 .quadratic=0.032f
             }
         );
-        r_ctx->lights.push_back(
+        r_ctx.lights.push_back(
             (vivianite::light){
                 .position=glm::vec4(0.0f, -5.0f, 0.0f, 1.0f),
                 .color=glm::vec4(0.0f, 1.0f, 0.0f, 1.0f),
@@ -260,35 +258,31 @@ namespace vivianite {
                 .quadratic=0.032f
             }
         );
-        r_ctx->init_SSBOs();
+        r_ctx.init_SSBOs();
 
-        r_ctx->init_FBOs();
+        r_ctx.init_FBOs();
 
-        glfwSetKeyCallback(r_ctx->window, e_ctx->key_callback);
-        e_ctx->l_ctx.log(Logging::log_level::NOTICE, "ENGINE SETUP DONE");
+        glfwSetKeyCallback(r_ctx.window, key_callback);
+        l_ctx.log(Logging::log_level::NOTICE, "ENGINE SETUP DONE");
     }
 
-    void engine::update(vivianite::renderer* r_ctx, void* ctx) {
-        auto* e_ctx = (vivianite::engine*)ctx;
-
+    void engine::update() {
         glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Rotate
-        r_ctx->render_queue[0].rotation.y += 0.03f;  
-        r_ctx->render_queue[0].rotation.x += 0.03f;
-        r_ctx->render_queue[0].rotation.z += 0.03f;
+        r_ctx.render_queue[0].rotation.y += 0.03f;  
+        r_ctx.render_queue[0].rotation.x += 0.03f;
+        r_ctx.render_queue[0].rotation.z += 0.03f;
 
-        if ((e_ctx->keys[GLFW_KEY_ESCAPE] == true) || r_ctx->shutdown) {
-            e_ctx->s_ctx.running = false;
-            r_ctx->exit();
+        if ((this->keys[GLFW_KEY_ESCAPE] == true) || r_ctx.shutdown) {
+            this->s_ctx.running = false;
+            r_ctx.exit();
         }
     }
 
-    void engine::exit(vivianite::renderer* r_ctx, void* ctx) {
-        auto* e_ctx = (vivianite::engine*)ctx;
-
-        e_ctx->l_ctx.log(Logging::log_level::INFO, "%f FPS (%f ms)", 1 / r_ctx->delta_time, r_ctx->delta_time * 1000.0f);
+    void engine::exit() {
+        l_ctx.log(Logging::log_level::INFO, "%f FPS (%f ms)", 1 / r_ctx.delta_time, r_ctx.delta_time * 1000.0f);
     }
 
     void engine::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {

@@ -435,7 +435,7 @@ namespace vivianite {
 
     void renderer::run() {
         logger->log(logger->INFO, "Starting main setup");
-        this->setup_func(this, engine_ctx);
+        this->setup_func();
 
         logger->log(logger->INFO, "Assigning shader program");
         glUseProgram(this->program.program);
@@ -564,48 +564,46 @@ namespace vivianite {
         glBindTexture(GL_TEXTURE_2D, depth_texture);
     }
 
-    void renderer::render_update(void* engine, void* renderer) {
-        auto* r_ctx = (vivianite::renderer*)renderer;
-
-        r_ctx->shutdown = glfwWindowShouldClose(r_ctx->window);
+    void renderer::render_update() {
+        this->shutdown = glfwWindowShouldClose(this->window);
             
 
-        r_ctx->time = glfwGetTime();
-        r_ctx->delta_time = r_ctx->time - r_ctx->last;
-        r_ctx->last = r_ctx->time;
+        this->time = glfwGetTime();
+        this->delta_time = this->time - this->last;
+        this->last = this->time;
 
-        r_ctx->update_func(r_ctx, r_ctx->engine_ctx);
+        this->update_func();
 
         // Camera rotation and position
         glm::mat4 view = glm::mat4(1.0f);
 
         view = glm::rotate(
             view,
-            -r_ctx->camera_rot.x,
+            -this->camera_rot.x,
             glm::vec3(1,0,0)
         );
 
         view = glm::rotate(
             view,
-            -r_ctx->camera_rot.y,
+            -this->camera_rot.y,
             glm::vec3(0,1,0)
         );
 
         view = glm::rotate(
             view,
-            -r_ctx->camera_rot.z,
+            -this->camera_rot.z,
             glm::vec3(0,0,1)
         );
 
         view = glm::translate(
             view,
-            -r_ctx->camera_pos
+            -this->camera_pos
         );
 
-        glUseProgram(r_ctx->program.program);
+        glUseProgram(this->program.program);
 
         glUniformMatrix4fv(
-            glGetUniformLocation(r_ctx->program.program, "view"),
+            glGetUniformLocation(this->program.program, "view"),
             1,
             GL_FALSE,
             glm::value_ptr(view)
@@ -613,64 +611,64 @@ namespace vivianite {
 
         // Camera
         glUniform3fv(
-            glGetUniformLocation(r_ctx->program.program, "camera_pos"),
+            glGetUniformLocation(this->program.program, "camera_pos"),
             1,
-            glm::value_ptr(r_ctx->camera_pos)
+            glm::value_ptr(this->camera_pos)
         );
 
         // Lights
         glUniform1i(
-            glGetUniformLocation(r_ctx->program.program, "light_count"),
-            static_cast<int>(r_ctx->lights.size())
+            glGetUniformLocation(this->program.program, "light_count"),
+            static_cast<int>(this->lights.size())
         );
 
         glUniform2f(
-            glGetUniformLocation(r_ctx->program.program, "screen_size"),
-            r_ctx->width,
-            r_ctx->height
+            glGetUniformLocation(this->program.program, "screen_size"),
+            this->width,
+            this->height
         );
 
         // Get depth buffer 
-        r_ctx->render_depth_buffer();
+        this->render_depth_buffer();
 
         glMemoryBarrier(
             GL_FRAMEBUFFER_BARRIER_BIT |
             GL_TEXTURE_FETCH_BARRIER_BIT
         );
-        glBindTextureUnit(0, r_ctx->depth_texture);
+        glBindTextureUnit(0, this->depth_texture);
 
         // Light culling
-        glUseProgram(r_ctx->tile_culling_program);
+        glUseProgram(this->tile_culling_program);
 
-        GLint loc_tx = glGetUniformLocation(r_ctx->tile_culling_program, "tiles_x");
-        GLint loc_ty = glGetUniformLocation(r_ctx->tile_culling_program, "tiles_y");
+        GLint loc_tx = glGetUniformLocation(this->tile_culling_program, "tiles_x");
+        GLint loc_ty = glGetUniformLocation(this->tile_culling_program, "tiles_y");
 
-        uint32_t tiles_x = (r_ctx->width + 15) / 16;
-        uint32_t tiles_y = (r_ctx->height + 15) / 16;
+        uint32_t tiles_x = (this->width + 15) / 16;
+        uint32_t tiles_y = (this->height + 15) / 16;
 
-        r_ctx->logger->log(r_ctx->logger->DEBUG,
+        this->logger->log(this->logger->DEBUG,
             "tiles_x loc=%d tiles_y loc=%d, values: %u %u %d",
-            loc_tx, loc_ty, tiles_x, tiles_y, (int)r_ctx->lights.size());
+            loc_tx, loc_ty, tiles_x, tiles_y, (int)this->lights.size());
 
         glUniform1ui(loc_tx, tiles_x);
         glUniform1ui(loc_ty, tiles_y);
 
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, r_ctx->light_ssbo);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, r_ctx->tile_ssbo);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, r_ctx->tile_light_ssbo);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, this->light_ssbo);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, this->tile_ssbo);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, this->tile_light_ssbo);
 
         glUniform1ui(
-            glGetUniformLocation(r_ctx->tile_culling_init_program, "tiles_x"),
+            glGetUniformLocation(this->tile_culling_init_program, "tiles_x"),
             tiles_x
         );
 
         glUniform1ui(
-            glGetUniformLocation(r_ctx->tile_culling_init_program, "tiles_y"),
+            glGetUniformLocation(this->tile_culling_init_program, "tiles_y"),
             tiles_y
         );
 
         glUniform1ui(
-            glGetUniformLocation(r_ctx->tile_culling_init_program, "max_lights_per_tile"),
+            glGetUniformLocation(this->tile_culling_init_program, "max_lights_per_tile"),
             MAX_LIGHTS_PER_TILE
         );
 
@@ -681,32 +679,32 @@ namespace vivianite {
         );
 
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-        glUseProgram(r_ctx->tile_culling_program);
+        glUseProgram(this->tile_culling_program);
 
-        loc_tx = glGetUniformLocation(r_ctx->tile_culling_program, "tiles_x");
-        loc_ty = glGetUniformLocation(r_ctx->tile_culling_program, "tiles_y");
-        GLint loc_lc = glGetUniformLocation(r_ctx->tile_culling_program, "light_count");
+        loc_tx = glGetUniformLocation(this->tile_culling_program, "tiles_x");
+        loc_ty = glGetUniformLocation(this->tile_culling_program, "tiles_y");
+        GLint loc_lc = glGetUniformLocation(this->tile_culling_program, "light_count");
 
         glUniform1ui(loc_tx, tiles_x);
         glUniform1ui(loc_ty, tiles_y);
-        glUniform1i(loc_lc, (int)r_ctx->lights.size());
+        glUniform1i(loc_lc, (int)this->lights.size());
 
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, r_ctx->light_ssbo);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, r_ctx->tile_ssbo);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, r_ctx->tile_light_ssbo);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, this->light_ssbo);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, this->tile_ssbo);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, this->tile_light_ssbo);
 
         glBindTextureUnit(
             0,
-            r_ctx->depth_texture
+            this->depth_texture
         );
 
         glUniform1ui(
-            glGetUniformLocation(r_ctx->tile_culling_program, "max_lights_per_tile"),
+            glGetUniformLocation(this->tile_culling_program, "max_lights_per_tile"),
             MAX_LIGHTS_PER_TILE
         );
         glUniform1ui(
-            glGetUniformLocation(r_ctx->tile_culling_program, "light_count"),
-            static_cast<int>(r_ctx->lights.size())
+            glGetUniformLocation(this->tile_culling_program, "light_count"),
+            static_cast<int>(this->lights.size())
         );
 
         glDispatchCompute(
@@ -717,45 +715,45 @@ namespace vivianite {
 
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT);
 
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, r_ctx->tile_ssbo);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, this->tile_ssbo);
 
         tile* ptr = (tile*)glMapBuffer(GL_SHADER_STORAGE_BUFFER,GL_READ_ONLY);
 
         if (ptr) {
             uint32_t mid_tile = (tiles_y / 2) * tiles_x + (tiles_x / 2);
 
-            r_ctx->logger->log(r_ctx->logger->DEBUG, "Tile mid (%u) count: %d", mid_tile, ptr[mid_tile].count);
+            this->logger->log(this->logger->DEBUG, "Tile mid (%u) count: %d", mid_tile, ptr[mid_tile].count);
 
             glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
         }
 
         // Actually Render
-        glUseProgram(r_ctx->program.program);
+        glUseProgram(this->program.program);
 
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, r_ctx->light_ssbo);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, r_ctx->tile_ssbo);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, r_ctx->tile_light_ssbo);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, this->light_ssbo);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, this->tile_ssbo);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, this->tile_light_ssbo);
 
         glBindBufferBase(
             GL_SHADER_STORAGE_BUFFER,
             0,
-            r_ctx->light_ssbo
+            this->light_ssbo
         );
 
         glBindBufferBase(
             GL_SHADER_STORAGE_BUFFER,
             1,
-            r_ctx->tile_ssbo
+            this->tile_ssbo
         );
 
         glBindBufferBase(
             GL_SHADER_STORAGE_BUFFER,
             2,
-            r_ctx->tile_light_ssbo
+            this->tile_light_ssbo
         );
 
         // Per-Model stuff
-        for (model obj : r_ctx->render_queue) {
+        for (model obj : this->render_queue) {
             glBindVertexArray(obj.obj.vao);
 
             // Translation
@@ -785,7 +783,7 @@ namespace vivianite {
 
             // Upload model
             glUniformMatrix4fv(
-                glGetUniformLocation(r_ctx->program.program, "model"),
+                glGetUniformLocation(this->program.program, "model"),
                 1,
                 GL_FALSE,
                 glm::value_ptr(modelMat)
@@ -793,18 +791,18 @@ namespace vivianite {
 
             // Material
             glUniform3fv(
-                glGetUniformLocation(r_ctx->program.program, "material.albedo"),
+                glGetUniformLocation(this->program.program, "material.albedo"),
                 1,
                 glm::value_ptr(obj.mat.albedo)
             );
 
             glUniform1f(
-                glGetUniformLocation(r_ctx->program.program, "material.shininess"),
+                glGetUniformLocation(this->program.program, "material.shininess"),
                 obj.mat.shininess
             );
 
             glUniform1f(
-                glGetUniformLocation(r_ctx->program.program, "material.specularStrength"),
+                glGetUniformLocation(this->program.program, "material.specularStrength"),
                 obj.mat.specular_strength
             );
 
@@ -812,7 +810,7 @@ namespace vivianite {
         }
 
         glfwPollEvents();
-        glfwSwapBuffers(r_ctx->window);
+        glfwSwapBuffers(this->window);
     }
 
     void renderer::exit() {
@@ -821,7 +819,7 @@ namespace vivianite {
 
     renderer::~renderer() {
         logger->log(logger->NOTICE, "Exiting... Check log for errors.");
-        this->exit_func(this, engine_ctx);
+        this->exit_func();
 
         if (window) {
             glfwDestroyWindow(window);
