@@ -23,10 +23,21 @@ setup:
 	@echo "Run the appropriate dependency installer for your platform."
 ifeq ($(OS),Windows_NT)
 	@echo "Windows detected."
-	@echo "Install MSYS2, then run:"
-	@echo "  pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-glfw mingw-w64-x86_64-glm python3"
+	@echo "Install MSYS2 with:"
+	@echo "  winget install MSYS2.MSYS2"
+	@echo ""
+	@echo "Then open the MSYS2 UCRT64 terminal and run:"
+	@echo "  pacman -Syu --needed \\"
+	@echo "    mingw-w64-ucrt-x86_64-gcc \\"
+	@echo "    mingw-w64-ucrt-x86_64-glfw3 \\"
+	@echo "    mingw-w64-ucrt-x86_64-glm \\"
+	@echo "    mingw-w64-ucrt-x86_64-mesa \\"
+	@echo "    mingw-w64-ucrt-x86_64-pkgconf \\"
+	@echo "    mingw-w64-ucrt-x86_64-python"
+	@echo ""
 	@echo "Then install Glad:"
 	@echo "  pip install glad"
+endif
 else
 	@if command -v apt >/dev/null; then \
 		sudo apt update && sudo apt install -y \
