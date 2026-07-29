@@ -1,10 +1,12 @@
 # Vivianite TODO-List
 
 ## Rendering
-- [~] Forward+ renderer
+- [~] Renderer
     - [x] OpenGL support
     - [x] Blinn-Phong rendering
+    - [x] Forward+ light culling
     - [x] Light culling
+    - [ ] Textures
     - [ ] Shadows
         - [ ] Shadow maps
         - [ ] Cascaded shadow maps
@@ -17,7 +19,7 @@
         - [ ] Tone mapping
         - [ ] Anti-aliasing
     - [ ] Scriptable shaders
-    - [ ] Vulkan support
+    - [ ] \(Vulkan support\)
 
 ## Input system
 - [~] Input system
@@ -25,7 +27,7 @@
     - [ ] Mouse input
     - [ ] Keyboard axes
     - [ ] Custom keytype
-    - [ ] Keyboard get_event()
+    - [ ] Keyboard get_event() function
     - [ ] Controller support
     - [ ] Input rebinding
 
@@ -45,14 +47,15 @@
     - [x] Logging subsystem
     - [x] Scheduling subsystem
     - [~] Input subsystem
+    - [ ] Resource manager subsystem
+    - [ ] Audio subsystem
+    - [ ] Serializer subsystem
+    - [ ] Networking subsystem
     - [ ] Scene system
     - [ ] ECS / Module system
     - [ ] Scriptable modules
-    - [ ] Resource manager
-    - [ ] Serialization
     - [ ] Configuration system
     - [ ] Built-in physics engine
-    - [ ] Audio system
     - [ ] Documentation
     - [ ] CUTE scripting integration
 
@@ -83,6 +86,32 @@
     - [ ] 3D spatial audio
     - [ ] Audio mixer
     - [ ] Audio events
+
+## Resource manager
+- [~] Resource managing system
+    - [ ] Resource handles / IDs
+    - [ ] Resource loading
+    - [ ] Resource unloading
+    - [ ] Resource caching
+    - [ ] Resource reference counting
+    - [ ] Async resource loading
+    - [ ] Resource dependency tracking
+    - [ ] Asset metadata
+    - [ ] Hot reloading
+    - [ ] Asset importing
+
+## ECS / Modules
+- [ ] ECS / Module system
+    - [ ] Base entity
+    - [ ] Modules that inherit the base entity
+        - [ ] Transform Module
+        - [ ] Rigidbody Module
+        - [ ] Meshrenderer Module
+            - [ ] Material Module
+        - [ ] Collider Module
+        - [ ] Audioplayer Module
+        - [ ] Input Module
+        - [ ] Scriptable Module
 
 ## Assets
 - [ ] Asset pipeline
