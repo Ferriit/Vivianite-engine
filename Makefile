@@ -3,23 +3,29 @@
 setup:
 	@echo "Run the appropriate dependency installer for your platform."
 ifeq ($(OS),Windows_NT)
-	@echo "Windows detected."
-	@echo "Install MSYS2 with:"
-	@echo "  winget install MSYS2.MSYS2"
-	@echo ""
-	@echo "Then open the MSYS2 UCRT64 terminal and run:"
-	@echo "  pacman -Syu --needed \\"
-	@echo "    mingw-w64-ucrt-x86_64-gcc \\"
-	@echo "    mingw-w64-ucrt-x86_64-glfw3 \\"
-	@echo "    mingw-w64-ucrt-x86_64-glm \\"
-	@echo "    mingw-w64-ucrt-x86_64-mesa \\"
-	@echo "    mingw-w64-ucrt-x86_64-pkgconf \\"
-	@echo "    mingw-w64-ucrt-x86_64-python"
-	@echo ""
-	@echo "Then install Glad:"
-	@echo "  pip install glad"
+	@if [ -n "$$MSYSTEM" ]; then \
+		echo "MSYS2 detected ($$MSYSTEM)"; \
+		pacman -Syu --needed --noconfirm \
+			mingw-w64-ucrt-x86_64-gcc \
+			mingw-w64-ucrt-x86_64-glfw \
+			mingw-w64-ucrt-x86_64-glm \
+			mingw-w64-ucrt-x86_64-mesa \
+			mingw-w64-ucrt-x86_64-pkgconf \
+			mingw-w64-ucrt-x86_64-python \
+			mingw-w64-ucrt-x86_64-python-pip; \
+		python -m venv venv; \
+		venv/Scripts/pip install glad; \
+	else \
+		echo "Windows detected."; \
+		echo "Install MSYS2 first:"; \
+		echo "  winget install MSYS2.MSYS2"; \
+		echo ""; \
+		echo "Then open the MSYS2 UCRT64 terminal and run:"; \
+		echo "  make setup"; \
+	fi
 else
 	@if command -v apt >/dev/null; then \
+		echo "Debian/Ubuntu detected"; \
 		sudo apt update && sudo apt install -y \
 			build-essential \
 			pkg-config \
@@ -28,16 +34,21 @@ else
 			libgl1-mesa-dev \
 			python3-pip \
 			python3.12-venv && \
-		python3 -m venv venv && source venv/bin/activate && pip3 install glad; \
+		python3 -m venv venv && \
+		venv/bin/pip install glad; \
+	\
 	elif command -v pacman >/dev/null; then \
+		echo "Arch detected"; \
 		sudo pacman -S --needed \
 			base-devel \
 			pkgconf \
 			glfw-x11 \
 			glm \
-			python-pip \
-			python && \
-		python3 -m venv venv && . venv/bin/activate && pip3 install glad; \
+			python \
+			python-pip && \
+		python -m venv venv && \
+		venv/bin/pip install glad; \
+	\
 	elif command -v dnf >/dev/null; then \
 		echo "Fedora detected"; \
 		sudo dnf install -y \
@@ -47,9 +58,11 @@ else
 			glfw-devel \
 			glm-devel \
 			mesa-libGL-devel \
-			mesa-libGLU-devel \
-			python3.12-venv && \
-		python3 -m venv venv && . venv/bin/activate && pip3 install glad; \
+			python3-pip \
+			python3-venv && \
+		python3 -m venv venv && \
+		venv/bin/pip install glad; \
+	\
 	elif command -v zypper >/dev/null; then \
 		echo "openSUSE detected"; \
 		sudo zypper install -y \
@@ -59,12 +72,15 @@ else
 			glfw3-devel \
 			glm-devel \
 			Mesa-libGL-devel \
-			python3.12-venv && \
-		python3 -m venv venv && . venv/bin/activate && pip3 install glad; \
-		else \
-			echo "Unsupported Linux distribution"; \
-			exit 1; \
-		fi
+			python3-pip \
+			python3-venv && \
+		python3 -m venv venv && \
+		venv/bin/pip install glad; \
+	\
+	else \
+		echo "Unsupported Linux distribution"; \
+		exit 1; \
+	fi
 endif
 
 GL_VERSION := 4.6
