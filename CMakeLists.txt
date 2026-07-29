@@ -146,6 +146,7 @@ else()
         target_compile_options(Vivianite PRIVATE
             -O0
             -g
+            -DDBG
         )
     elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
         target_compile_options(Vivianite PRIVATE
