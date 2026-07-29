@@ -26,47 +26,48 @@ set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 if(UNIX AND NOT APPLE)
     set(GLFW_MISSING_DEPENDENCIES "")
 
-    include(CheckIncludeFile)
+    find_package(PkgConfig QUIET)
+
+    if(NOT PKG_CONFIG_FOUND)
+        list(APPEND GLFW_MISSING_DEPENDENCIES "pkg-config")
+    else()
+        pkg_check_modules(X11 x11)
+        pkg_check_modules(XRANDR xrandr)
+        pkg_check_modules(XINERAMA xinerama)
+        pkg_check_modules(XCURSOR xcursor)
+        pkg_check_modules(XI xi)
+        pkg_check_modules(WAYLAND wayland-client)
+        pkg_check_modules(XKBCOMMON xkbcommon)
+    endif()
+
     include(CheckLibraryExists)
 
-    check_include_file(X11/Xlib.h HAVE_X11)
-    check_include_file(X11/extensions/Xrandr.h HAVE_XRANDR)
-    check_include_file(X11/extensions/Xinerama.h HAVE_XINERAMA)
-    check_include_file(X11/Xcursor/Xcursor.h HAVE_XCURSOR)
-    check_include_file(X11/extensions/XInput2.h HAVE_XINPUT2)
-    check_include_file(GL/gl.h HAVE_OPENGL)
-    check_include_file(wayland-client.h HAVE_WAYLAND)
-    check_include_file(xkbcommon/xkbcommon.h HAVE_XKBCOMMON)
-
-    if(NOT HAVE_X11)
+    check_library_exists(GL GLX "" HAVE_OPENGL)
+    if(NOT X11_FOUND)
         list(APPEND GLFW_MISSING_DEPENDENCIES "libx11-dev")
     endif()
 
-    if(NOT HAVE_XRANDR)
+    if(NOT XRANDR_FOUND)
         list(APPEND GLFW_MISSING_DEPENDENCIES "libxrandr-dev")
     endif()
 
-    if(NOT HAVE_XINERAMA)
+    if(NOT XINERAMA_FOUND)
         list(APPEND GLFW_MISSING_DEPENDENCIES "libxinerama-dev")
     endif()
 
-    if(NOT HAVE_XCURSOR)
+    if(NOT XCURSOR_FOUND)
         list(APPEND GLFW_MISSING_DEPENDENCIES "libxcursor-dev")
     endif()
 
-    if(NOT HAVE_XINPUT2)
+    if(NOT XI_FOUND)
         list(APPEND GLFW_MISSING_DEPENDENCIES "libxi-dev")
     endif()
 
-    if(NOT HAVE_OPENGL)
-        list(APPEND GLFW_MISSING_DEPENDENCIES "libgl1-mesa-dev")
-    endif()
-
-    if(NOT HAVE_WAYLAND)
+    if(NOT WAYLAND_FOUND)
         list(APPEND GLFW_MISSING_DEPENDENCIES "libwayland-dev")
     endif()
 
-    if(NOT HAVE_XKBCOMMON)
+    if(NOT XKBCOMMON_FOUND)
         list(APPEND GLFW_MISSING_DEPENDENCIES "libxkbcommon-dev")
     endif()
 
@@ -85,7 +86,6 @@ if(UNIX AND NOT APPLE)
 
         message(FATAL_ERROR "Install missing dependencies and rerun CMake.")
     endif()
-
 endif()
 
 # Build GLFW from submodule/source
