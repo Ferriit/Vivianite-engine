@@ -5,6 +5,7 @@ CXX_GLAD := -Iglad/include glad/src/gl.c
 CXX_GLFW := $(shell pkg-config --cflags --libs glfw3) -ldl
 CXX_FLAGS := -Wall -Wextra -Iglad/include
 WARN_FLAGS := -Wunused-but-set-variable -Wno-unused-parameter -Wno-missing-field-initializers
+RELEASE_FLAGS := -O3 -DNDEBUG -flto
 
 CXX_SRC := $(wildcard src/runtime/*.cpp)
 CXX_OBJ := $(patsubst src/runtime/%.cpp, build/%.o, $(CXX_SRC))
@@ -39,6 +40,9 @@ $(GLAD_FILES):
 	@glad --api gl:core=$(GL_VERSION) --out-path glad c --loader
 
 runtime_dbg: glad dist/Vivianite_dbg
+
+release: $(CXX_FLAGS) += $(RELEASE_FLAGS)
+release: runtime
 
 build/debug/%.o: src/runtime/%.cpp
 	@mkdir -p build/debug/
