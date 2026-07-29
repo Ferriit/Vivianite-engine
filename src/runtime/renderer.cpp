@@ -394,7 +394,7 @@ namespace vivianite {
         // GLFW window
         this->window = glfwCreateWindow(this->width, this->height, this->title, NULL, NULL);
 
-        if (!this->window) {
+        if (this->window == NULL) {
             logger->log(logger->FATAL, "Failed to open Window");
             return false;
         }
