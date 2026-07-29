@@ -147,6 +147,8 @@ namespace vivianite {
         s_ctx.r_ctx = (void*)(&this->r_ctx);
 
         s_ctx.l_ctx = &l_ctx;
+
+        i_ctx.r_ptr = (void*)&r_ctx;
         
         Scheduler::Task e_init = (Scheduler::Task) {
             .run_type = Scheduler::Task::ASAP,
@@ -175,6 +177,10 @@ namespace vivianite {
         }
 
         r_ctx.initialize();
+
+        i_ctx.initialize();
+
+        r_ctx.i_ctx = &i_ctx;
 
         r_ctx.program.frag_path = "assets/frag.glsl";
         r_ctx.program.vert_path = "assets/vert.glsl";
@@ -262,7 +268,6 @@ namespace vivianite {
 
         r_ctx.init_FBOs();
 
-        glfwSetKeyCallback(r_ctx.window, key_callback);
         l_ctx.log(Logging::log_level::NOTICE, "ENGINE SETUP DONE");
     }
 
@@ -275,7 +280,7 @@ namespace vivianite {
         r_ctx.render_queue[0].rotation.x += 0.03f;
         r_ctx.render_queue[0].rotation.z += 0.03f;
 
-        if ((this->keys[GLFW_KEY_ESCAPE] == true) || r_ctx.shutdown) {
+        if (i_ctx.is_pressed(KeyType::K_escape) || r_ctx.shutdown) {
             this->s_ctx.running = false;
             r_ctx.exit();
         }
@@ -283,25 +288,6 @@ namespace vivianite {
 
     void engine::exit() {
         l_ctx.log(Logging::log_level::INFO, "%f FPS (%f ms)", 1 / r_ctx.delta_time, r_ctx.delta_time * 1000.0f);
-    }
-
-    void engine::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-        auto* r_ctx = static_cast<vivianite::renderer*>(glfwGetWindowUserPointer(window));
-        if (!r_ctx)
-            return;
-
-        auto* e_ctx = static_cast<vivianite::engine*>(r_ctx->engine_ctx);
-        if (!e_ctx)
-            return;
-
-        if (action == GLFW_PRESS) {
-            e_ctx->keys[key] = true;
-            e_ctx->scancodes.insert(scancode);
-        }
-        else if (action == GLFW_RELEASE) {
-            e_ctx->keys[key] = false;
-            e_ctx->scancodes.erase(scancode);
-        }
     }
 };
 

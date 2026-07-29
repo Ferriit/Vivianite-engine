@@ -257,16 +257,20 @@ namespace vivianite {
     };
 
     class Input {
+        private:
+            static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
         public:
             std::vector<std::function<void(KeyEvent)>> key_callbacks;
+
+            std::vector<bool> keys;
             
             void* r_ptr = nullptr;
 
-            Input();
+            void initialize();
 
             KeyType glfw_to_keytype(int key);
 
-            static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+            bool is_pressed(KeyType key);
     };
 
     // RENDERER
@@ -417,6 +421,8 @@ namespace vivianite {
 
             Scheduler::Scheduler s_ctx;
 
+            Input i_ctx;
+
             engine();
 
             void init();
@@ -428,6 +434,6 @@ namespace vivianite {
             void exit();
 
         private:
-            static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+            void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
     };
 }

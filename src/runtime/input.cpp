@@ -1,10 +1,12 @@
 #include "include.hpp"
 
 namespace vivianite {
-    Input::Input() {
+    void Input::initialize() {
         auto* r_ctx = (renderer*)r_ptr;
 
-        glfwSetKeyCallback(r_ctx->window, this->key_callback);
+        keys.resize(KeyType::K_unknown);
+
+        glfwSetKeyCallback(r_ctx->window, key_callback);
     }
 
     void Input::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -21,9 +23,15 @@ namespace vivianite {
             .mods = mods
         };
 
-        for (auto& callback: i_ctx->key_callbacks) {
+        i_ctx->keys[i_ctx->glfw_to_keytype(key)] = action == GLFW_PRESS;
+
+        for (auto& callback : i_ctx->key_callbacks) {
             callback(event);
         }
+    }
+
+    bool Input::is_pressed(KeyType key) {
+        return this->keys[key];
     }
 
     KeyType Input::glfw_to_keytype(int key) {
