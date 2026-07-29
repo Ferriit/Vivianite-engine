@@ -14,7 +14,7 @@ DEBUG_OBJ := $(patsubst src/runtime/%.cpp, build/debug/%.o, $(CXX_SRC))
 GLAD_FILES := glad/include/glad/gl.h glad/src/gl.c
 
 TOTAL := $(words $(CXX_OBJ))
-COUNT = 0
+INDEX = $(shell i=1; for f in $(CXX_SRC); do [ "$$f" = "$1" ] && echo $$i && exit; i=$$((i+1)); done)
 
 .PHONY: default runtime runtime_dbg glad run debug clean
 
@@ -25,15 +25,13 @@ runtime: glad dist/Vivianite
 
 dist/Vivianite: $(CXX_OBJ)
 	@mkdir -p dist/
-	@printf "Linking runtime\n"
+	@printf "\nLinking runtime\n"
 	@$(CXX) $^ $(CXX_GLAD) $(CXX_GLFW) -o $@
 
 build/%.o: src/runtime/%.cpp
 	@mkdir -p build/
-	@$(eval COUNT=$(shell echo $$(($(COUNT)+1))))
-	@printf "\r\033[K[%s / %s] Compiling %s to %s\n" $(COUNT) $(TOTAL) $^ $@
+	@printf "[%s / %s] Compiling %s to %s\n" $(call INDEX,$<) $(TOTAL) $< $@
 	@$(CXX) $(CXX_FLAGS) -c $< -o $@
-	@printf "\x1b[A"
 
 glad: $(GLAD_FILES)
 
