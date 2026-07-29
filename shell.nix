@@ -1,16 +1,27 @@
 { pkgs ? import <nixpkgs> {} }:
 
 pkgs.mkShell {
-  buildInputs = [
-    pkgs.python3
-    pkgs.python3Packages.virtualenv
-
-    pkgs.glfw
+  packages = [
+    pkgs.cmake
+    pkgs.ninja
     pkgs.pkg-config
-
-    pkgs.glm
-
-    pkgs.gdb
+    pkgs.gcc
+  
+    pkgs.libffi
+    pkgs.libGL
+  
+    pkgs.xorg.libX11
+    pkgs.xorg.libXrandr
+    pkgs.xorg.libXinerama
+    pkgs.xorg.libXcursor
+    pkgs.xorg.libXi
+    pkgs.xorg.libXxf86vm
+    pkgs.xorg.libXext
+    pkgs.xorg.libXrender
+  
+    pkgs.wayland
+    pkgs.wayland-scanner
+    pkgs.libxkbcommon
   ];
 
   shellHook = ''

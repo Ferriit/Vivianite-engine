@@ -5,7 +5,7 @@ GL_VERSION := 4.6
 default: runtime
 
 runtime: glad
-	cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+	cmake -B build -G Ninja
 	cmake --build build
 
 runtime_dbg: glad
