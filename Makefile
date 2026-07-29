@@ -87,7 +87,11 @@ GL_VERSION := 4.6
 
 CXX := g++
 CXX_GLAD := -Iglad/include glad/src/gl.c
-CXX_GLFW := $(shell pkg-config --cflags --libs glfw3) -ldl
+ifeq ($(OS),Windows_NT)
+	CXX_GLFW := $(shell pkg-config --cflags --libs glfw3) -lopengl32
+else
+	CXX_GLFW := $(shell pkg-config --cflags --libs glfw3) -ldl
+endif
 CXX_FLAGS := -Wall -Wextra -Iglad/include
 WARN_FLAGS := -Wunused-but-set-variable -Wno-unused-parameter -Wno-missing-field-initializers
 RELEASE_FLAGS := -O3 -DNDEBUG -flto
