@@ -17,7 +17,64 @@ GLAD_FILES := glad/include/glad/gl.h glad/src/gl.c
 TOTAL := $(words $(CXX_OBJ))
 INDEX = $(shell i=1; for f in $(CXX_SRC); do [ "$$f" = "$1" ] && echo $$i && exit; i=$$((i+1)); done)
 
-.PHONY: default runtime runtime_dbg glad run debug clean
+.PHONY: default runtime runtime_dbg glad run debug clean setup
+
+setup:
+	@echo "Run the appropriate dependency installer for your platform."
+ifeq ($(OS),Windows_NT)
+	@echo "Windows detected."
+	@echo "Install MSYS2, then run:"
+	@echo "  pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-glfw mingw-w64-x86_64-glm python3"
+	@echo "Then install Glad:"
+	@echo "  pip install glad"
+else
+	@if command -v apt >/dev/null; then \
+		sudo apt update && sudo apt install -y \
+			build-essential \
+			pkg-config \
+			libglfw3-dev \
+			libglm-dev \
+			libgl1-mesa-dev \
+			python3-pip \
+			python3.12-venv && \
+		python3 -m venv venv && source venv/bin/activate && pip3 install glad; \
+	elif command -v pacman >/dev/null; then \
+		sudo pacman -S --needed \
+			base-devel \
+			pkgconf \
+			glfw-x11 \
+			glm \
+			python-pip \
+			python && \
+		python3 -m venv venv && . venv/bin/activate && pip3 install glad; \
+	elif command -v dnf >/dev/null; then \
+		echo "Fedora detected"; \
+		sudo dnf install -y \
+			gcc-c++ \
+			make \
+			pkgconf-pkg-config \
+			glfw-devel \
+			glm-devel \
+			mesa-libGL-devel \
+			mesa-libGLU-devel \
+			python3.12-venv && \
+		python3 -m venv venv && . venv/bin/activate && pip3 install glad; \
+	elif command -v zypper >/dev/null; then \
+		echo "openSUSE detected"; \
+		sudo zypper install -y \
+			gcc-c++ \
+			make \
+			pkg-config \
+			glfw3-devel \
+			glm-devel \
+			Mesa-libGL-devel \
+			python3.12-venv && \
+		python3 -m venv venv && . venv/bin/activate && pip3 install glad; \
+		else \
+			echo "Unsupported Linux distribution"; \
+			exit 1; \
+		fi
+endif
 
 default: runtime
 
