@@ -82,7 +82,9 @@ if(UNIX AND NOT APPLE)
 
         message(STATUS "")
         message(STATUS "Ubuntu/Debian install command:")
-        message(STATUS "  sudo apt install ${GLFW_MISSING_DEPENDENCIES}")
+        string(REPLACE ";" " " GLFW_INSTALL_COMMAND "${GLFW_MISSING_DEPENDENCIES}")
+
+        message(STATUS "  sudo apt install ${GLFW_INSTALL_COMMAND}")
 
         message(FATAL_ERROR "Install missing dependencies and rerun CMake.")
     endif()
