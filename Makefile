@@ -4,15 +4,15 @@ GL_VERSION := 4.6
 
 default: runtime
 
-runtime: glad
+runtime: glad clean
 	cmake -B build -G Ninja
 	cmake --build build
 
-runtime_dbg: glad
+runtime_dbg: glad clean
 	cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
 	cmake --build build
 
-release: glad
+release: glad clean
 	cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_LTO=ON
 	cmake --build build
 
