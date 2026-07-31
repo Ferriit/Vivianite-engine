@@ -24,7 +24,7 @@
 ## Input system
 - [~] Input system
     - [x] Key callbacks
-    - [ ] Mouse input
+    - [~] Mouse input
     - [x] Keyboard axes
     - [x] Custom keytype
     - [x] Keyboard get_event() function
@@ -97,7 +97,7 @@
     - [ ] Async resource loading
     - [ ] Resource dependency tracking
     - [ ] Asset metadata
-    - [ ] Hot reloading
+    - [x] Hot reloading
     - [ ] Asset importing
 
 ## ECS / Modules

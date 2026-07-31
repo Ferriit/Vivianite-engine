@@ -427,7 +427,27 @@ namespace vivianite {
         C_triangle = C_y,
         C_square = C_x,
 
-        K_unknown = C_right_trigger + 1
+        // Mouse axes
+        M_x = C_right_trigger + 1,
+        M_y,
+
+        // Mouse buttons
+        M_lmb,
+        M_mmb,
+        M_rmb,
+
+        M_4,
+        M_5,
+        M_6,
+        M_7,
+        M_8,
+
+        // Mouse aliases
+        M_1 = M_lmb,
+        M_2 = M_mmb,
+        M_3 = M_rmb,
+
+        K_unknown = M_8 + 1
     };
 
     enum KeyAction {
@@ -445,6 +465,7 @@ namespace vivianite {
     struct Axis {
         std::optional<std::pair<KeyType, KeyType>> keys;
         std::optional<KeyType> joystick;
+        std::optional<bool>
     };
 
     class Input {
