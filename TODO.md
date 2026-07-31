@@ -25,10 +25,10 @@
 - [~] Input system
     - [x] Key callbacks
     - [ ] Mouse input
-    - [ ] Keyboard axes
-    - [ ] Custom keytype
-    - [ ] Keyboard get_event() function
-    - [~] Controller support
+    - [x] Keyboard axes
+    - [x] Custom keytype
+    - [x] Keyboard get_event() function
+    - [x] Controller support
     - [ ] Input rebinding
 
 ## Scheduling system
