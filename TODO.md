@@ -6,7 +6,7 @@
     - [x] Blinn-Phong rendering
     - [x] Forward+ light culling
     - [x] Light culling
-    - [ ] Textures
+    - [~] Textures
     - [ ] Shadows
         - [ ] Shadow maps
         - [ ] Cascaded shadow maps
@@ -89,10 +89,10 @@
 
 ## Resource manager
 - [~] Resource managing system
-    - [ ] Resource handles / IDs
-    - [ ] Resource loading
-    - [ ] Resource unloading
-    - [ ] Resource caching
+    - [x] Resource handles / IDs
+    - [x] Resource loading
+    - [~] Resource unloading
+    - [x] Resource caching
     - [ ] Resource reference counting
     - [ ] Async resource loading
     - [ ] Resource dependency tracking

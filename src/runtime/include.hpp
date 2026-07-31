@@ -6,10 +6,10 @@
 #include <cstdio>
 #include <string>
 
-#include "../../external/glad/include/glad/gl.h"
+#include "../external/glad/include/glad/gl.h"
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
+#include "../external/glm/glm/glm.hpp"
 #include <glm/gtc/type_ptr.hpp>
 
 #include <fstream>
@@ -25,6 +25,8 @@
 
 #include <utility>
 
+#include "../external/stb/stb_image.h"
+
 #define VIVIANITE_VSYNC_TRUE 1
 #define VIVIANITE_VSYNC_FALSE 0
 #define VIVIANITE_VSYNC_HALF 2
@@ -32,6 +34,97 @@
 #define MAX_LIGHTS_PER_TILE 64
 
 namespace vivianite {
+    struct shader {
+        std::string frag_path, vert_path;
+        std::string frag_raw, vert_raw;
+        GLuint frag, vert, program;
+    };
+
+    struct texture {
+        GLenum warping; // GL_REPEAT, GL_MIRRORED_REPEAT, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_BORDER
+        GLenum filtering; // GL_NEAREST, GL_LINEAR
+        GLint texture;
+    };
+
+    // TODO: Add a material format
+    struct alignas(16) material {
+        glm::vec3 albedo;
+        float shininess;
+        float specular_strength;
+    };
+
+    struct alignas(16) mesh {
+        std::vector<float> vertices;
+        GLuint vao;
+        size_t vertex_count;
+    };
+
+    struct alignas(16) model {
+        mesh obj;
+        glm::vec3 position;
+        glm::vec3 rotation;
+        material mat;
+    };
+
+    struct alignas(16) light {
+        glm::vec4 position;
+        glm::vec4 color;
+        float radius, strength;
+        float linear;
+        float quadratic;
+    };
+
+    struct tile {
+        uint32_t count;
+        uint32_t offset;
+    };
+
+    using ResourceID = uint64_t;
+
+    class ResourceManager {
+        private:
+            std::vector<std::tuple<bool, std::shared_ptr<void>, std::string>> objects;
+
+        public:
+            template<typename T>
+            void set_obj(ResourceID ID, std::string path) {
+                objects[ID] = {
+                    false,
+                    nullptr,
+                    path
+                };
+            }
+
+            template<typename T>
+            ResourceID add_obj(std::string path) {
+                objects.push_back({
+                    false,
+                    nullptr,
+                    path
+                });
+                return objects.size() - 1;
+            }
+
+            bool is_loaded(ResourceID ID) {
+                if (ID >= objects.size())
+                    return false;
+
+                auto [loaded, obj, path] = objects[ID];
+                return loaded;
+            }
+
+            template<typename T>
+            std::shared_ptr<T> get_obj(ResourceID ID) {
+                if (ID >= objects.size())
+                    return nullptr;
+
+                auto [loaded, obj, path] = objects[ID];
+                return static_pointer_cast<T>(obj);
+            }
+
+            bool obj_load_obj(ResourceID ID);
+    };
+
     class Time {
     public:
         using timestamp = long long;
@@ -388,45 +481,6 @@ namespace vivianite {
     };
 
     // RENDERER
-    struct shader {
-        std::string frag_path, vert_path;
-        std::string frag_raw, vert_raw;
-        GLuint frag, vert, program;
-    };
-
-    // TODO: Add a material format
-    struct alignas(16) material {
-        glm::vec3 albedo;
-        float shininess;
-        float specular_strength;
-    };
-
-    struct alignas(16) mesh {
-        std::vector<float> vertices;
-        GLuint vao;
-        size_t vertex_count;
-    };
-
-    struct alignas(16) model {
-        mesh obj;
-        glm::vec3 position;
-        glm::vec3 rotation;
-        material mat;
-    };
-
-    struct alignas(16) light {
-        glm::vec4 position;
-        glm::vec4 color;
-        float radius, strength;
-        float linear;
-        float quadratic;
-    };
-
-    struct tile {
-        uint32_t count;
-        uint32_t offset;
-    };
-
     static_assert(sizeof(tile) == 8);
 
     class renderer {
@@ -461,7 +515,7 @@ namespace vivianite {
             std::vector<model> render_queue = {};
 
             glm::vec3 camera_pos = glm::vec3(0.0f, 0.0f, 5.0f);
-            glm::vec3 camera_rot = glm::vec3(0.0f, 0.0f, -1.0f);
+            glm::vec3 camera_rot = glm::vec3(0.0f, 0.0f, 0.0f);
             glm::mat4 projection;
 
             std::vector<light> lights = {};
@@ -520,11 +574,11 @@ namespace vivianite {
     };
 
     // ENGINE
-    mesh load_obj(const char* filename);
-
     class engine {
         public:
             int status = 0;
+
+            ResourceManager rm_ctx;
 
             std::array<bool, GLFW_KEY_LAST + 1> keys = {};
             std::unordered_set<int> scancodes = {};

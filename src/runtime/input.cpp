@@ -70,6 +70,9 @@ namespace vivianite {
         float joystick_axis = 0.0f;
         if (axis.joystick.has_value()) {
             joystick_axis = analog_axes[axis.joystick.value() - KeyType::C_left_x];
+
+            if ((axis.joystick.value() == C_left_y) || (axis.joystick.value() == C_right_y))
+                joystick_axis = -joystick_axis;
         }
 
         float keyboard_axis = 0.0f;
