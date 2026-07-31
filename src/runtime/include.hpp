@@ -19,6 +19,10 @@
 #include <cstring>
 #include <sstream>
 
+#include <format>
+#include <deque>
+#include <iostream>
+
 #define VIVIANITE_VSYNC_TRUE 1
 #define VIVIANITE_VSYNC_FALSE 0
 #define VIVIANITE_VSYNC_HALF 2
@@ -95,20 +99,48 @@ namespace vivianite {
             std::string message;
         };
 
-        bool colored;
-
-        bool verbose = false;
-
-        std::vector<log_entry> buffer;
-
-        size_t max_buffer_size = 1000;
+        bool verbose;
 
         Logging(bool colored = true)
             : colored(colored) {}
 
-        void log(log_level level, const char* format, ...); 
+        template <typename... Args>
+        void log(log_level level, std::format_string<Args...> format, Args&&... args) {
+            if (level == log_level::DEBUG && !verbose) return;
 
-        void clear(); 
+            auto dt_UTC = Time().get_time();
+            auto dt = Time().utc_to_date_time(dt_UTC);
+            std::string message = std::format(format, std::forward<Args>(args)...);
+
+            buffer.push_back({level, dt, message});
+            if (buffer.size() > max_buffer_size)
+                buffer.pop_front();
+
+            static constexpr std::array<std::pair<std::string_view, std::string_view>, 7> level_info = {{
+                {"INFO",   "\x1b[32m"},
+                {"WARN",   "\x1b[38;5;214m"},
+                {"ERROR",  "\x1b[31;1m"},
+                {"FATAL",  "\x1b[31;40m"},
+                {"NOTICE", "\x1b[34;1m"},
+                {"DEBUG",  "\x1b[38;5;242m"},
+                {"",       "\x1b[0m"},
+            }};
+            const auto& [label, color] = level_info[std::to_underlying(level)];
+
+            if (colored) std::cout << color;
+            if (!label.empty()) std::cout << "[" << label << "] ";
+            std::cout << std::format("[{:04}-{:02}-{:02} {:02}:{:02}:{:02}] ",
+                                      dt.year, dt.month, dt.day, dt.hour, dt.min, dt.sec);
+            if (colored) std::cout << "\x1b[0m";
+            std::cout << message << "\n" << std::flush;
+        }
+
+        void clear() { buffer.clear(); }
+
+    private:
+        std::deque<log_entry> buffer;
+        std::size_t max_buffer_size;
+        bool colored;
     };
 
     namespace Scheduler {
