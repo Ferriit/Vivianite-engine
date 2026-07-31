@@ -159,7 +159,6 @@ namespace vivianite {
 
         s_ctx.add_task(e_init);
 
-
         #ifndef DBG
         s_ctx.l_ctx->verbose = false;
         #endif
@@ -179,6 +178,16 @@ namespace vivianite {
         r_ctx.initialize();
 
         i_ctx.initialize();
+
+        i_ctx.set_axis("k_vertical_axis", (Axis){
+            .keys = std::optional(std::pair<KeyType, KeyType>(KeyType::K_w, KeyType::K_s)),
+            .joystick = std::optional(KeyType::C_left_y),
+        });
+
+        i_ctx.set_axis("k_horizontal_axis", (Axis){
+            .keys = std::optional(std::pair<KeyType, KeyType>(KeyType::K_d, KeyType::K_a)),
+            .joystick = std::optional(KeyType::C_left_x),
+        });
 
         r_ctx.i_ctx = &i_ctx;
 
@@ -286,6 +295,8 @@ namespace vivianite {
         r_ctx.render_queue[0].rotation.y += 0.03f;  
         r_ctx.render_queue[0].rotation.x += 0.03f;
         r_ctx.render_queue[0].rotation.z += 0.03f;
+
+        l_ctx.log(Logging::log_level::DEBUG, "k_vertical_axis: {}", i_ctx.get_axis("k_vertical_axis"));
 
         if (i_ctx.is_pressed(KeyType::K_escape) || r_ctx.shutdown) {
             this->s_ctx.running = false;

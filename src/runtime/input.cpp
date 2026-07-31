@@ -33,13 +33,22 @@ namespace vivianite {
             if (glfwJoystickPresent(keytype_to_glfw_joystick((KeyType)i)) && glfwJoystickIsGamepad(keytype_to_glfw_joystick((KeyType)i))) {
                 GLFWgamepadstate state;
 
-                if (glfwGetGamepadState(i, &state)) {
+                if (glfwGetGamepadState(keytype_to_glfw_joystick((KeyType)i), &state)) {
                     for (int j = KeyType::C_a; j < C_dpad_left + 1; j++) {
-                        if (state.buttons[keytype_to_glfw_gamepad_button((KeyType)j)] == KeyAction::KEY_DOWN) {
-                            keys[j] = true;
+                        int button = keytype_to_glfw_gamepad_button((KeyType)j);
+
+                        if ((button == -1) || (button == KeyType::K_unknown))
+                            continue;
+
+                        keys[j] = state.buttons[button] == GLFW_PRESS;
+                    }
+
+                    for (int j = KeyType::C_left_x; j < KeyType::C_right_trigger + 1; j++) {
+                        if ((j != C_left_trigger) && (j != C_right_trigger)) {
+                            analog_axes[j - C_left_x] = apply_deadzone(state.axes[keytype_to_glfw_gamepad_button((KeyType)j)]);
                         }
-                        else if (state.buttons[keytype_to_glfw_gamepad_button((KeyType)j)] == KeyAction::KEY_UP) {
-                            keys[j] = false;
+                        else {
+                            analog_axes[j - C_left_x] = state.axes[keytype_to_glfw_gamepad_button((KeyType)j)];
                         }
                     }
                 }
@@ -47,6 +56,39 @@ namespace vivianite {
         }
 
         glfwPollEvents();
+    }
+
+    float Input::get_axis(std::string name) {
+        auto it = input_axes.find(name);
+
+        if (it == input_axes.end()) {
+            return 0.0f;
+        }
+
+        const auto& axis = it->second;
+
+        float joystick_axis = 0.0f;
+        if (axis.joystick.has_value()) {
+            joystick_axis = analog_axes[axis.joystick.value() - KeyType::C_left_x];
+        }
+
+        float keyboard_axis = 0.0f;
+        if (axis.keys.has_value()) {
+            auto [positive, negative] = axis.keys.value();
+            keyboard_axis = keys[positive] - keys[negative];
+        }
+
+        return std::abs(joystick_axis) > std::abs(keyboard_axis) ? joystick_axis : keyboard_axis;
+    }
+
+    void Input::set_axis(std::string name, Axis axis) {
+        Axis& input_axis = input_axes[name];
+
+        input_axis = axis;
+    }
+
+    float Input::apply_deadzone(float value) {
+        return std::abs(value) < deadzone ? 0.0f : value;
     }
 
     KeyType Input::glfw_gamepad_button_to_keytype(int button) {
@@ -146,6 +188,24 @@ namespace vivianite {
 
             case C_dpad_left:
                 return GLFW_GAMEPAD_BUTTON_DPAD_LEFT;
+
+            case C_left_x:
+                return GLFW_GAMEPAD_AXIS_LEFT_X;
+            
+            case C_left_y:
+                return GLFW_GAMEPAD_AXIS_LEFT_Y;
+
+            case C_right_x:
+                return GLFW_GAMEPAD_AXIS_RIGHT_X;
+
+            case C_right_y:
+                return GLFW_GAMEPAD_AXIS_RIGHT_Y;
+
+            case C_left_trigger:
+                return GLFW_GAMEPAD_AXIS_LEFT_TRIGGER;
+
+            case C_right_trigger:
+                return GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER;
 
             default:
                 return -1;

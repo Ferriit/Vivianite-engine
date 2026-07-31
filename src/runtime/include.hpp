@@ -23,6 +23,8 @@
 #include <deque>
 #include <iostream>
 
+#include <utility>
+
 #define VIVIANITE_VSYNC_TRUE 1
 #define VIVIANITE_VSYNC_FALSE 0
 #define VIVIANITE_VSYNC_HALF 2
@@ -332,7 +334,7 @@ namespace vivianite {
         C_triangle = C_y,
         C_square = C_x,
 
-        K_unknown
+        K_unknown = C_right_trigger + 1
     };
 
     enum KeyAction {
@@ -348,22 +350,34 @@ namespace vivianite {
     };
 
     struct Axis {
-        KeyType positive, negative;
-        
+        std::optional<std::pair<KeyType, KeyType>> keys;
+        std::optional<KeyType> joystick;
     };
 
     class Input {
         private:
             static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+
+            std::unordered_map<std::string, Axis> input_axes;
         public:
             std::vector<std::function<void(KeyEvent)>> key_callbacks;
 
-            std::array<bool, KeyType::K_unknown + 1> keys;
+                std::array<bool, KeyType::K_unknown + 1> keys;
+
+            std::array<float, KeyType::C_right_trigger - KeyType::C_left_x + 1> analog_axes;
+
+            float deadzone = 0.15f;
             
             void* r_ptr = nullptr;
 
+            float apply_deadzone(float value);
+
             void initialize();
             void update();
+
+            float get_axis(std::string name);
+
+            void set_axis(std::string name, Axis axis);
 
             KeyType glfw_to_keytype(int key);
             KeyType glfw_gamepad_button_to_keytype(int button);

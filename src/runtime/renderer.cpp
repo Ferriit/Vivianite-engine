@@ -646,9 +646,9 @@ namespace vivianite {
         uint32_t tiles_x = (this->width + 15) / 16;
         uint32_t tiles_y = (this->height + 15) / 16;
 
-        this->logger->log(this->logger->DEBUG,
-            "tiles_x loc=%d tiles_y loc=%d, values: %u %u %d",
-            loc_tx, loc_ty, tiles_x, tiles_y, (int)this->lights.size());
+        // this->logger->log(this->logger->DEBUG,
+        //     "tiles_x loc=%d tiles_y loc=%d, values: %u %u %d",
+        //     loc_tx, loc_ty, tiles_x, tiles_y, (int)this->lights.size());
 
         glUniform1ui(loc_tx, tiles_x);
         glUniform1ui(loc_ty, tiles_y);
@@ -722,7 +722,7 @@ namespace vivianite {
         if (ptr) {
             uint32_t mid_tile = (tiles_y / 2) * tiles_x + (tiles_x / 2);
 
-            this->logger->log(this->logger->DEBUG, "Tile mid (%u) count: %d", mid_tile, ptr[mid_tile].count);
+            // this->logger->log(this->logger->DEBUG, "Tile mid (%u) count: %d", mid_tile, ptr[mid_tile].count);
 
             glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
         }
