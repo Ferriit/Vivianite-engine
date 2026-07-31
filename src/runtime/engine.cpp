@@ -3,12 +3,12 @@
 
 namespace vivianite {
     mesh load_obj(const char* filename) {
-        Logging().log(Logging::INFO, "Reading file \"%s\"", filename);
+        Logging().log(Logging::INFO, "Reading file \"{}\"", filename);
 
         std::ifstream file(filename);
 
         if (!file.is_open()) {
-            Logging().log(Logging::ERROR, "Unable to open model \"%s\"", filename);
+            Logging().log(Logging::ERROR, "Unable to open model \"{}\"", filename);
             return {};
         }
 
@@ -199,13 +199,20 @@ namespace vivianite {
 
         r_ctx.engine_ctx = this;
         
+        Scheduler::Task input_loop_tks = (Scheduler::Task) {
+            .run_type=Scheduler::Task::EVERY_FRAME,
+            .callback=[this]() {
+                i_ctx.update();
+            },
+        };
+        this->s_ctx.add_task(input_loop_tks);
+
         Scheduler::Task main_loop_tsk = (Scheduler::Task) {
             .run_type=Scheduler::Task::EVERY_FRAME,
             .callback=[this]() {
                 r_ctx.render_update();
             },
         };
-
         this->s_ctx.add_task(main_loop_tsk);
 
         r_ctx.run();
@@ -218,7 +225,7 @@ namespace vivianite {
 
         cube_obj.vao = cube;
 
-        vivianite::model cube_model = {.obj=cube_obj, .position=glm::vec3(0.0f, 0.0f, 0.0f)};
+        vivianite::model cube_model = {.obj=cube_obj, .position=glm::vec3(0.0f, 0.0f, 0.0f), .rotation=glm::vec3(0.0f, 0.0f, 0.0f)};
 
         cube_model.mat = (vivianite::material){
             .albedo = glm::vec3(1.0f, 1.0f, 1.0f),
@@ -287,7 +294,7 @@ namespace vivianite {
     }
 
     void engine::exit() {
-        l_ctx.log(Logging::log_level::INFO, "%f FPS (%f ms)", 1 / r_ctx.delta_time, r_ctx.delta_time * 1000.0f);
+        l_ctx.log(Logging::log_level::INFO, "{} FPS ({} ms)", 1 / r_ctx.delta_time, r_ctx.delta_time * 1000.0f);
     }
 };
 

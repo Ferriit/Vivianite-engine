@@ -809,7 +809,6 @@ namespace vivianite {
             glDrawArrays(GL_TRIANGLES, 0, obj.obj.vertex_count);
         }
 
-        glfwPollEvents();
         glfwSwapBuffers(this->window);
     }
 

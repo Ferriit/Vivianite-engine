@@ -23,12 +23,12 @@
 
 ## Input system
 - [~] Input system
-    - [~] Key callbacks
+    - [x] Key callbacks
     - [ ] Mouse input
     - [ ] Keyboard axes
     - [ ] Custom keytype
     - [ ] Keyboard get_event() function
-    - [ ] Controller support
+    - [~] Controller support
     - [ ] Input rebinding
 
 ## Scheduling system

@@ -273,6 +273,65 @@ namespace vivianite {
         K_print_screen,
         K_pause,
 
+        // Controller buttons
+        // Joystick slots
+        C_JOYSTICK_1,
+        C_JOYSTICK_2,
+        C_JOYSTICK_3,
+        C_JOYSTICK_4,
+        C_JOYSTICK_5,
+        C_JOYSTICK_6,
+        C_JOYSTICK_7,
+        C_JOYSTICK_8,
+        C_JOYSTICK_9,
+        C_JOYSTICK_10,
+        C_JOYSTICK_11,
+        C_JOYSTICK_12,
+        C_JOYSTICK_13,
+        C_JOYSTICK_14,
+        C_JOYSTICK_15,
+        C_JOYSTICK_16,
+
+        // Face buttons
+        C_a,
+        C_b,
+        C_x,
+        C_y,
+
+        // Shoulder buttons
+        C_left_bumper,
+        C_right_bumper,
+
+        // Menu buttons
+        C_back,
+        C_start,
+        C_guide,
+
+        // Stick clicks
+        C_left_thumb,
+        C_right_thumb,
+
+        // D-pad
+        C_dpad_up,
+        C_dpad_right,
+        C_dpad_down,
+        C_dpad_left,
+
+        // Analog axes
+        C_left_x,
+        C_left_y,
+        C_right_x,
+        C_right_y,
+
+        C_left_trigger,
+        C_right_trigger,
+
+        // PlayStation aliases
+        C_cross = C_a,
+        C_circle = C_b,
+        C_triangle = C_y,
+        C_square = C_x,
+
         K_unknown
     };
 
@@ -288,19 +347,28 @@ namespace vivianite {
         int mods;
     };
 
+    struct Axis {
+        KeyType positive, negative;
+        
+    };
+
     class Input {
         private:
             static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
         public:
             std::vector<std::function<void(KeyEvent)>> key_callbacks;
 
-            std::vector<bool> keys;
+            std::array<bool, KeyType::K_unknown + 1> keys;
             
             void* r_ptr = nullptr;
 
             void initialize();
+            void update();
 
             KeyType glfw_to_keytype(int key);
+            KeyType glfw_gamepad_button_to_keytype(int button);
+            int keytype_to_glfw_joystick(KeyType key);
+            int keytype_to_glfw_gamepad_button(KeyType key);
 
             bool is_pressed(KeyType key);
     };

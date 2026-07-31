@@ -10,7 +10,7 @@ namespace vivianite {
         void Scheduler::add_task(Task tsk) {
             tsk.r_ctx = this->r_ctx;
 
-            l_ctx->log(Logging::INFO, "Scheduler: Adding task #%d", tasks.size());
+            l_ctx->log(Logging::INFO, "Scheduler: Adding task #{}", tasks.size());
             
             if ((tsk.run_type == Task::ONCE) || (tsk.run_type == Task::INTERVAL)) {
                 tsk.next_run = Time().get_time() + tsk.delay;

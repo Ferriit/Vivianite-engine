@@ -4,8 +4,6 @@ namespace vivianite {
     void Input::initialize() {
         auto* r_ctx = (renderer*)r_ptr;
 
-        keys.resize(KeyType::K_unknown);
-
         glfwSetKeyCallback(r_ctx->window, key_callback);
     }
 
@@ -27,6 +25,153 @@ namespace vivianite {
 
         for (auto& callback : i_ctx->key_callbacks) {
             callback(event);
+        }
+    }
+
+    void Input::update() {
+        for (int i = KeyType::C_JOYSTICK_1; i < KeyType::C_JOYSTICK_16 + 1; i++) {
+            if (glfwJoystickPresent(keytype_to_glfw_joystick((KeyType)i)) && glfwJoystickIsGamepad(keytype_to_glfw_joystick((KeyType)i))) {
+                GLFWgamepadstate state;
+
+                if (glfwGetGamepadState(i, &state)) {
+                    for (int j = KeyType::C_a; j < C_dpad_left + 1; j++) {
+                        if (state.buttons[keytype_to_glfw_gamepad_button((KeyType)j)] == KeyAction::KEY_DOWN) {
+                            keys[j] = true;
+                        }
+                        else if (state.buttons[keytype_to_glfw_gamepad_button((KeyType)j)] == KeyAction::KEY_UP) {
+                            keys[j] = false;
+                        }
+                    }
+                }
+            }
+        }
+
+        glfwPollEvents();
+    }
+
+    KeyType Input::glfw_gamepad_button_to_keytype(int button) {
+        switch (button) {
+            case GLFW_GAMEPAD_BUTTON_A:
+                return C_a;
+
+            case GLFW_GAMEPAD_BUTTON_B:
+                return C_b;
+
+            case GLFW_GAMEPAD_BUTTON_X:
+                return C_x;
+
+            case GLFW_GAMEPAD_BUTTON_Y:
+                return C_y;
+
+            case GLFW_GAMEPAD_BUTTON_LEFT_BUMPER:
+                return C_left_bumper;
+
+            case GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER:
+                return C_right_bumper;
+
+            case GLFW_GAMEPAD_BUTTON_BACK:
+                return C_back;
+
+            case GLFW_GAMEPAD_BUTTON_START:
+                return C_start;
+
+            case GLFW_GAMEPAD_BUTTON_GUIDE:
+                return C_guide;
+
+            case GLFW_GAMEPAD_BUTTON_LEFT_THUMB:
+                return C_left_thumb;
+
+            case GLFW_GAMEPAD_BUTTON_RIGHT_THUMB:
+                return C_right_thumb;
+
+            case GLFW_GAMEPAD_BUTTON_DPAD_UP:
+                return C_dpad_up;
+
+            case GLFW_GAMEPAD_BUTTON_DPAD_RIGHT:
+                return C_dpad_right;
+
+            case GLFW_GAMEPAD_BUTTON_DPAD_DOWN:
+                return C_dpad_down;
+
+            case GLFW_GAMEPAD_BUTTON_DPAD_LEFT:
+                return C_dpad_left;
+
+            default:
+                return K_unknown;
+        }
+    }
+    int Input::keytype_to_glfw_gamepad_button(KeyType key) {
+        switch (key) {
+            case C_a:
+                return GLFW_GAMEPAD_BUTTON_A;
+
+            case C_b:
+                return GLFW_GAMEPAD_BUTTON_B;
+
+            case C_x:
+                return GLFW_GAMEPAD_BUTTON_X;
+
+            case C_y:
+                return GLFW_GAMEPAD_BUTTON_Y;
+
+            case C_left_bumper:
+                return GLFW_GAMEPAD_BUTTON_LEFT_BUMPER;
+
+            case C_right_bumper:
+                return GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER;
+
+            case C_back:
+                return GLFW_GAMEPAD_BUTTON_BACK;
+
+            case C_start:
+                return GLFW_GAMEPAD_BUTTON_START;
+
+            case C_guide:
+                return GLFW_GAMEPAD_BUTTON_GUIDE;
+
+            case C_left_thumb:
+                return GLFW_GAMEPAD_BUTTON_LEFT_THUMB;
+
+            case C_right_thumb:
+                return GLFW_GAMEPAD_BUTTON_RIGHT_THUMB;
+
+            case C_dpad_up:
+                return GLFW_GAMEPAD_BUTTON_DPAD_UP;
+
+            case C_dpad_right:
+                return GLFW_GAMEPAD_BUTTON_DPAD_RIGHT;
+
+            case C_dpad_down:
+                return GLFW_GAMEPAD_BUTTON_DPAD_DOWN;
+
+            case C_dpad_left:
+                return GLFW_GAMEPAD_BUTTON_DPAD_LEFT;
+
+            default:
+                return -1;
+        }
+    }
+    int Input::keytype_to_glfw_joystick(KeyType key) {
+        switch (key) {
+            case C_JOYSTICK_1:  return GLFW_JOYSTICK_1;
+            case C_JOYSTICK_2:  return GLFW_JOYSTICK_2;
+            case C_JOYSTICK_3:  return GLFW_JOYSTICK_3;
+            case C_JOYSTICK_4:  return GLFW_JOYSTICK_4;
+            case C_JOYSTICK_5:  return GLFW_JOYSTICK_5;
+            case C_JOYSTICK_6:  return GLFW_JOYSTICK_6;
+            case C_JOYSTICK_7:  return GLFW_JOYSTICK_7;
+            case C_JOYSTICK_8:  return GLFW_JOYSTICK_8;
+            case C_JOYSTICK_9:  return GLFW_JOYSTICK_9;
+            case C_JOYSTICK_10: return GLFW_JOYSTICK_10;
+            case C_JOYSTICK_11: return GLFW_JOYSTICK_11;
+            case C_JOYSTICK_12: return GLFW_JOYSTICK_12;
+            case C_JOYSTICK_13: return GLFW_JOYSTICK_13;
+            case C_JOYSTICK_14: return GLFW_JOYSTICK_14;
+            case C_JOYSTICK_15: return GLFW_JOYSTICK_15;
+            case C_JOYSTICK_16: return GLFW_JOYSTICK_16;
+
+            default:
+                return -1;
         }
     }
 
