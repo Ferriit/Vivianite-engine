@@ -40,12 +40,12 @@ namespace vivianite {
 
         i_ctx.set_axis("k_vertical_axis", (Axis){
             .keys = std::optional(std::pair<KeyType, KeyType>(KeyType::K_w, KeyType::K_s)),
-            .joystick = std::optional(KeyType::C_left_y),
+            .analog = std::optional(KeyType::C_left_y),
         });
 
         i_ctx.set_axis("k_horizontal_axis", (Axis){
             .keys = std::optional(std::pair<KeyType, KeyType>(KeyType::K_d, KeyType::K_a)),
-            .joystick = std::optional(KeyType::C_left_x),
+            .analog = std::optional(KeyType::C_left_x),
         });
 
         r_ctx.i_ctx = &i_ctx;

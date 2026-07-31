@@ -464,8 +464,7 @@ namespace vivianite {
 
     struct Axis {
         std::optional<std::pair<KeyType, KeyType>> keys;
-        std::optional<KeyType> joystick;
-        std::optional<bool>
+        std::optional<KeyType> analog;
     };
 
     class Input {

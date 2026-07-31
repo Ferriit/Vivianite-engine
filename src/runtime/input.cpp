@@ -68,10 +68,10 @@ namespace vivianite {
         const auto& axis = it->second;
 
         float joystick_axis = 0.0f;
-        if (axis.joystick.has_value()) {
-            joystick_axis = analog_axes[axis.joystick.value() - KeyType::C_left_x];
+        if (axis.analog.has_value()) {
+            joystick_axis = analog_axes[axis.analog.value() - KeyType::C_left_x];
 
-            if ((axis.joystick.value() == C_left_y) || (axis.joystick.value() == C_right_y))
+            if ((axis.analog.value() == C_left_y) || (axis.analog.value() == C_right_y))
                 joystick_axis = -joystick_axis;
         }
 
