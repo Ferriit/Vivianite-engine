@@ -88,6 +88,20 @@ namespace vivianite {
 
     void engine::setup() {
         // Set up cube
+        // Set up Textures
+        ResourceID cube_tex_id = rm_ctx.add_obj<Texture>("assets/cube.png");
+        rm_ctx.data[cube_tex_id] =
+            std::static_pointer_cast<void>(
+                std::make_shared<Texture>(Texture{
+                    .wraping = GL_REPEAT,
+                    .min_filtering = GL_NEAREST,
+                    .mag_filtering = GL_NEAREST
+                }
+            )
+        );
+
+        rm_ctx.tex_load_obj(cube_tex_id);
+
         ResourceID cube_id = rm_ctx.add_obj<mesh>("assets/cube.obj");
         
         rm_ctx.obj_load_obj(cube_id);
@@ -100,7 +114,7 @@ namespace vivianite {
         vivianite::model cube_model = {.obj=cube_obj, .position=glm::vec3(0.0f, 0.0f, 0.0f), .rotation=glm::vec3(0.0f, 0.0f, 0.0f)};
 
         cube_model.mat = (vivianite::material){
-            .albedo = glm::vec3(1.0f, 1.0f, 1.0f),
+            .albedo = rm_ctx.get_obj<Texture>(cube_tex_id),
             .shininess = 32.0f,
             .specular_strength = 0.5f
         };

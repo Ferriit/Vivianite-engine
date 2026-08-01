@@ -6,7 +6,7 @@
     - [x] Blinn-Phong rendering
     - [x] Forward+ light culling
     - [x] Light culling
-    - [~] Textures
+    - [x] Textures
     - [ ] Shadows
         - [ ] Shadow maps
         - [ ] Cascaded shadow maps
@@ -96,7 +96,7 @@
     - [ ] Resource reference counting
     - [ ] Async resource loading
     - [ ] Resource dependency tracking
-    - [ ] Asset metadata
+    - [>] Asset metadata
     - [x] Hot reloading
     - [ ] Asset importing
 

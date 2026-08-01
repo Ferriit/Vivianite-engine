@@ -1,7 +1,6 @@
 #version 460 core
 
 struct Material {
-    vec3 albedo;
     float shininess;
     float specularStrength;
 };
@@ -34,11 +33,13 @@ layout(std430, binding = 2) buffer tile_light_buffer {
 
 in vec3 vertex_color;
 in vec3 vertex_normal;
+in vec2 vertex_UV;
 in vec3 frag_pos;
 
 out vec4 FragColor;
 
 uniform Material material;
+uniform sampler2D albedo_tex;
 
 uniform vec3 camera_pos;
 
@@ -63,7 +64,7 @@ vec3 blinn_phong_shading(Light l, float ambient_strength) {
     vec3 N = normalize(vertex_normal);
     vec3 L = normalize(light_position - frag_pos);
     float diff = max(dot(N, L), 0.0);
-    vec3 diffuse_col = diff * material.albedo * light_color * attenuation;
+    vec3 diffuse_col = diff * texture(albedo_tex, vertex_UV).rgb * light_color * attenuation;
 
     // Specular shading
     vec3 V = normalize(camera_pos - frag_pos);

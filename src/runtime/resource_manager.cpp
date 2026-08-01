@@ -24,9 +24,13 @@ namespace vivianite {
         std::vector<float> ny_list;
         std::vector<float> nz_list;
 
+        std::vector<float> u_list;
+        std::vector<float> v_list;
+
         struct Face {
             std::array<int, 3> vertex;
             std::array<int, 3> normal;
+            std::array<int, 3> UV;
         };
 
         std::vector<Face> faces;
@@ -68,11 +72,29 @@ namespace vivianite {
                     size_t s1 = token.find('/');
                     size_t s2 = token.find('/', s1 + 1);
 
-                    face.vertex[i] = std::stoi(token.substr(0, s1)) - 1;
-                    face.normal[i] = std::stoi(token.substr(s2 + 1)) - 1;
+                    face.vertex[i] = std::stoi(
+                        token.substr(0, s1)
+                    ) - 1;
+
+                    face.UV[i] = std::stoi(
+                        token.substr(s1 + 1, s2 - s1 - 1)
+                    ) - 1;
+
+                    face.normal[i] = std::stoi(
+                        token.substr(s2 + 1)
+                    ) - 1;
                 }
 
                 faces.push_back(face);
+            }
+            else if (line.rfind("vt ", 0) == 0) {
+                std::stringstream ss(line.substr(3));
+
+                float u, v;
+                ss >> u >> v;
+
+                u_list.push_back(u);
+                v_list.push_back(v);
             }
         }
 
@@ -103,13 +125,14 @@ namespace vivianite {
         float dz = (max_z - min_z == 0) ? 1.0f : max_z - min_z;
 
         std::vector<float> vertices;
-        vertices.reserve(faces.size() * 3 * 9);
+        vertices.reserve(faces.size() * 3 * 11);
 
         for (const Face& face : faces) {
             for (int i = 0; i < 3; i++) {
 
                 int vi = face.vertex[i];
                 int ni = face.normal[i];
+                int ti = face.UV[i];
 
                 float x = x_list[vi];
                 float y = y_list[vi];
@@ -137,6 +160,10 @@ namespace vivianite {
                 vertices.push_back(nx_list[ni]);
                 vertices.push_back(ny_list[ni]);
                 vertices.push_back(nz_list[ni]);
+
+                // UV
+                vertices.push_back(u_list[ti]);
+                vertices.push_back(v_list[ti]);
             }
         }
 
@@ -171,7 +198,7 @@ namespace vivianite {
         glGenTextures(1, &texture);
         glBindTexture(GL_TEXTURE_2D, texture);
 
-        Texture tex_template = *static_pointer_cast<Texture>(obj);
+        Texture tex_template = *std::reinterpret_pointer_cast<Texture>(this->data[ID]);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, tex_template.wraping);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, tex_template.wraping);

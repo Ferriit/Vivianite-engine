@@ -82,7 +82,7 @@ namespace vivianite {
         glGetShaderiv(this->program.frag, GL_COMPILE_STATUS, &isCompiled);
         if(isCompiled == GL_FALSE) {
             glGetShaderInfoLog(this->program.frag, 512, nullptr, infoLog);
-            logger->log(logger->ERROR, "Fragment shader error:\n%512s", infoLog);
+            logger->log(logger->ERROR, "Fragment shader error:\n{}", infoLog);
 
             glDeleteShader(this->program.frag); // Don't leak the shader.
             return;
@@ -96,7 +96,7 @@ namespace vivianite {
         glGetShaderiv(this->program.vert, GL_COMPILE_STATUS, &isCompiled);
         if(isCompiled == GL_FALSE) {
             glGetShaderInfoLog(this->program.vert, 512, nullptr, infoLog);
-            logger->log(logger->ERROR, "Vertex shader error:\n%512s", infoLog);
+            logger->log(logger->ERROR, "Vertex shader error:\n{}", infoLog);
 
             glDeleteShader(this->program.frag); // Don't leak the shader.
             return;
@@ -116,7 +116,7 @@ namespace vivianite {
             char infoLog[512];
             glGetProgramInfoLog(this->program.program, 512, nullptr, infoLog);
 
-            logger->log(logger->FATAL, "Shader program link error:\n%s", infoLog);
+            logger->log(logger->FATAL, "Shader program link error:\n{}", infoLog);
 
             glDeleteProgram(this->program.program);
             return;
@@ -153,7 +153,7 @@ namespace vivianite {
         glGetShaderiv(shader, GL_COMPILE_STATUS, &isCompiled);
         if(isCompiled == GL_FALSE) {
             glGetShaderInfoLog(shader, 512, nullptr, infoLog);
-            logger->log(logger->ERROR, "Depth shader error:\n%512s", infoLog);
+            logger->log(logger->ERROR, "Depth shader error:\n{}", infoLog);
 
             glDeleteShader(shader); // Don't leak the shader.
             return;
@@ -170,7 +170,7 @@ namespace vivianite {
         if (isLinked == GL_FALSE) {
             glGetProgramInfoLog(program, 512, nullptr, infoLog);
 
-            logger->log(logger->ERROR, "Depth program error:\n%s", infoLog);
+            logger->log(logger->ERROR, "Depth program error:\n{}", infoLog);
 
             glDeleteProgram(program);
             glDeleteShader(shader);
@@ -213,7 +213,7 @@ namespace vivianite {
         glGetShaderiv(shader, GL_COMPILE_STATUS, &isCompiled);
         if(isCompiled == GL_FALSE) {
             glGetShaderInfoLog(shader, 512, nullptr, infoLog);
-            logger->log(logger->ERROR, "Compute shader error:\n%512s", infoLog);
+            logger->log(logger->ERROR, "Compute shader error:\n{}", infoLog);
 
             glDeleteShader(shader); // Don't leak the shader.
             return 0;
@@ -232,7 +232,7 @@ namespace vivianite {
         if (isLinked == GL_FALSE) {
             glGetProgramInfoLog(program, 512, nullptr, infoLog);
 
-            logger->log(logger->ERROR, "Compute program error:\n%s", infoLog);
+            logger->log(logger->ERROR, "Compute program error:\n{}", infoLog);
 
             glDeleteProgram(program);
             glDeleteShader(shader);
@@ -256,16 +256,20 @@ namespace vivianite {
         glBufferData(GL_ARRAY_BUFFER, mesh.size() * sizeof(float), mesh.data(), GL_STATIC_DRAW);
 
         // Position
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
         
         // Color
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(3 * sizeof(float)));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(3 * sizeof(float)));
         glEnableVertexAttribArray(1);
 
         // Normal
-        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(6 * sizeof(float)));
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(6 * sizeof(float)));
         glEnableVertexAttribArray(2);
+
+        // UV
+        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(9 * sizeof(float)));
+        glEnableVertexAttribArray(3);
 
         return vao;
     }
@@ -709,7 +713,7 @@ namespace vivianite {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, this->tile_light_ssbo);
 
         glBindTextureUnit(
-            0,
+            1,
             this->depth_texture
         );
 
@@ -804,11 +808,14 @@ namespace vivianite {
                 glm::value_ptr(modelMat)
             );
 
+            // Bind texture
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, obj.mat.albedo->texture);
+
             // Material
-            glUniform3fv(
-                glGetUniformLocation(this->program.program, "material.albedo"),
-                1,
-                glm::value_ptr(obj.mat.albedo)
+            glUniform1i(
+                glGetUniformLocation(this->program.program, "albedo_tex"),
+                0
             );
 
             glUniform1f(

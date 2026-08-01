@@ -22,6 +22,7 @@
 #include <format>
 #include <deque>
 #include <iostream>
+#include <memory>
 
 #include <utility>
 
@@ -44,12 +45,12 @@ namespace vivianite {
         GLenum wraping; // GL_REPEAT, GL_MIRRORED_REPEAT, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_BORDER
         GLenum min_filtering; // GL_NEAREST, GL_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR
         GLenum mag_filtering; // GL_NEAREST, GL_LINEAR
-        GLuint texture;
+        GLint texture;
     };
 
     // TODO: Add a material format
     struct alignas(16) material {
-        glm::vec3 albedo;
+        std::shared_ptr<Texture> albedo;
         float shininess;
         float specular_strength;
     };
@@ -87,6 +88,8 @@ namespace vivianite {
             std::vector<std::tuple<bool, std::shared_ptr<void>, std::string>> objects;
 
         public:
+            std::vector<std::shared_ptr<void>> data;
+
             template<typename T>
             void set_obj(ResourceID ID, std::string path) {
                 objects[ID] = {
@@ -103,6 +106,7 @@ namespace vivianite {
                     nullptr,
                     path
                 });
+                data.resize(data.size() + 1);
                 return objects.size() - 1;
             }
 
