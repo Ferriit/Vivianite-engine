@@ -187,7 +187,7 @@ namespace vivianite {
         r_ctx.render_queue[0].rotation.x += 0.03f;
         r_ctx.render_queue[0].rotation.z += 0.03f;
 
-        l_ctx.log(Logging::log_level::DEBUG, "k_vertical_axis: {}", i_ctx.get_axis("k_vertical_axis"));
+        l_ctx.log(Logging::log_level::DEBUG, "Mouse: {} {} {}", i_ctx.is_pressed(KeyType::M_lmb), i_ctx.is_pressed(KeyType::M_mmb), i_ctx.is_pressed(KeyType::M_rmb));
 
         r_ctx.camera_pos = glm::vec3(
             i_ctx.get_axis("k_horizontal_axis"),

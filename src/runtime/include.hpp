@@ -438,6 +438,8 @@ namespace vivianite {
         M_x = C_right_trigger + 1,
         M_y,
 
+        M_scroll,
+
         // Mouse buttons
         M_lmb,
         M_mmb,
@@ -478,16 +480,26 @@ namespace vivianite {
     class Input {
         private:
             static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+            static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+            static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
+
             std::unordered_map<std::string, Axis> input_axes;
             std::unordered_map<std::string, KeyType> actions;
 
             double last_mouse_x = 0.0;
             double last_mouse_y = 0.0;
+            double last_mouse_scroll_x = 0.0;
+            double last_mouse_scroll_y = 0.0;
 
             double abs_mouse_x = 0.0;
             double abs_mouse_y = 0.0;
+            double abs_mouse_scroll_x = 0.0;
+            double abs_mouse_scroll_y = 0.0;
+
             double rel_mouse_x = 0.0;
             double rel_mouse_y = 0.0;
+            double rel_mouse_scroll_x = 0.0;
+            double rel_mouse_scroll_y = 0.0;
 
         public:
             std::vector<std::function<void(KeyEvent)>> key_callbacks;

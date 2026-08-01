@@ -5,6 +5,8 @@ namespace vivianite {
         auto* r_ctx = (renderer*)r_ptr;
 
         glfwSetKeyCallback(r_ctx->window, key_callback);
+        glfwSetScrollCallback(r_ctx->window, scroll_callback);
+        glfwSetMouseButtonCallback(r_ctx->window, mouse_button_callback);
 
         glfwSetInputMode(r_ctx->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         if (glfwRawMouseMotionSupported())
@@ -13,7 +15,6 @@ namespace vivianite {
 
     void Input::key_callback(GLFWwindow* window, int key, [[maybe_unused]]int scancode, int action, int mods) {
         vivianite::renderer* r_ctx = (renderer*)glfwGetWindowUserPointer(window);
-
         Input* i_ctx = r_ctx->i_ctx;
 
         KeyEvent event {
@@ -30,6 +31,33 @@ namespace vivianite {
         for (auto& callback : i_ctx->key_callbacks) {
             callback(event);
         }
+    }
+
+    void Input::scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+        vivianite::renderer* r_ctx = (renderer*)glfwGetWindowUserPointer(window);
+        Input* i_ctx = r_ctx->i_ctx;
+
+        i_ctx->rel_mouse_scroll_x = xoffset;
+        i_ctx->rel_mouse_scroll_y = yoffset;
+
+        i_ctx->abs_mouse_scroll_x += xoffset;
+        i_ctx->abs_mouse_scroll_y += yoffset;
+    }
+
+    void Input::mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+        vivianite::renderer* r_ctx = (renderer*)glfwGetWindowUserPointer(window);
+        Input* i_ctx = r_ctx->i_ctx;
+
+        KeyEvent event {
+            .key = i_ctx->glfw_to_keytype(button),
+            .action = 
+                action == GLFW_PRESS ? KEY_DOWN :
+                action == GLFW_RELEASE ? KEY_UP :
+                KEY_REPEAT,
+            .mods = mods
+        };
+
+        i_ctx->keys[i_ctx->glfw_to_keytype(button)] = action != GLFW_RELEASE;
     }
 
     Input::~Input() {
@@ -408,6 +436,16 @@ namespace vivianite {
             // Misc
             case GLFW_KEY_PRINT_SCREEN: return K_print_screen;
             case GLFW_KEY_PAUSE: return K_pause;
+
+            // Mouse
+            case GLFW_MOUSE_BUTTON_LEFT: return M_lmb;
+            case GLFW_MOUSE_BUTTON_MIDDLE: return M_mmb;
+            case GLFW_MOUSE_BUTTON_RIGHT: return M_rmb;
+            case GLFW_MOUSE_BUTTON_4: return M_4;
+            case GLFW_MOUSE_BUTTON_5: return M_5;
+            case GLFW_MOUSE_BUTTON_6: return M_6;
+            case GLFW_MOUSE_BUTTON_7: return M_7;
+            case GLFW_MOUSE_BUTTON_8: return M_8;
 
             default:
                 return K_unknown;
