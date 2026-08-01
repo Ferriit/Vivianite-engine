@@ -2,6 +2,9 @@
 #include "include.hpp"
 
 vivianite::Time::timestamp elapsed_time = 0;
+vivianite::Time::timestamp start_time = 0;
+
+int frame_count = 0;
 
 namespace vivianite {
     engine::engine() : r_ctx(&l_ctx) {
@@ -213,6 +216,7 @@ namespace vivianite {
             -i_ctx.get_axis("m_horizontal_axis") / 10.0f,
             0.0f
         );
+
         if (i_ctx.is_pressed(KeyType::K_escape)) {
             l_ctx.log(l_ctx.ERROR, "Shutdown: ESC pressed");
         }
@@ -225,6 +229,8 @@ namespace vivianite {
             this->s_ctx.running = false;
             r_ctx.exit();
         }
+
+        frame_count++;
     }
 
     void engine::fixed_update() {
@@ -234,13 +240,14 @@ namespace vivianite {
     }
 
     void engine::exit() {
-        l_ctx.log(Logging::log_level::INFO, "{} FPS ({} ms)", 1 / r_ctx.delta_time, r_ctx.delta_time * 1000.0f);
+        l_ctx.log(Logging::log_level::INFO, "{} FPS ({} ms)", frame_count / ((Time().get_time() - start_time) * 1000), ((Time().get_time() - start_time) * 1000) / frame_count);
     }
 };
 
 
 int main() {
     elapsed_time = vivianite::Time().get_time();
+    start_time = vivianite::Time().get_time();
 
     vivianite::engine ctx;
 
