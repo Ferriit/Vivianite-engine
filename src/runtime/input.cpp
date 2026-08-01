@@ -38,6 +38,7 @@ namespace vivianite {
     }
 
     void Input::update() {
+        glfwPollEvents();
         auto* r_ctx = (renderer*)r_ptr;
 
         this->last_mouse_x = this->abs_mouse_x;
@@ -72,8 +73,6 @@ namespace vivianite {
         glfwGetCursorPos(r_ctx->window, &this->abs_mouse_x, &this->abs_mouse_y);
         this->rel_mouse_x = this->last_mouse_x - this->abs_mouse_x;
         this->rel_mouse_y = this->last_mouse_y - this->abs_mouse_y;
-
-        glfwPollEvents();
     }
 
     bool Input::get_action(std::string action_name) {
