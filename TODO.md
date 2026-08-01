@@ -47,7 +47,7 @@
     - [x] Logging subsystem
     - [x] Scheduling subsystem
     - [~] Input subsystem
-    - [ ] Resource manager subsystem
+    - [~] Resource manager subsystem
     - [ ] Audio subsystem
     - [ ] Serializer subsystem
     - [ ] Networking subsystem
