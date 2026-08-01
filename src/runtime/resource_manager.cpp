@@ -63,7 +63,7 @@ namespace vivianite {
             else if (line.rfind("f ", 0) == 0) {
                 std::stringstream ss(line.substr(2));
 
-                Face face;
+                Face face{};
 
                 for (int i = 0; i < 3; i++) {
                     std::string token;

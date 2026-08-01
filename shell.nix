@@ -6,6 +6,7 @@ pkgs.mkShell {
     pkgs.ninja
     pkgs.pkg-config
     pkgs.gcc
+    pkgs.gdb
   
     pkgs.libffi
     pkgs.libGL

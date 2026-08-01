@@ -506,8 +506,8 @@ namespace vivianite {
 
         public:
             std::vector<std::function<void(KeyEvent)>> key_callbacks;
-            std::array<bool, KeyType::K_unknown + 1> keys;
-            std::array<float, KeyType::C_right_trigger - KeyType::C_left_x + 1> analog_axes;
+            std::array<bool, KeyType::K_unknown + 1> keys{};
+            std::array<float, KeyType::C_right_trigger - KeyType::C_left_x + 1> analog_axes{};
 
             float deadzone = 0.15f;
             float mouse_sensitivity = 0.03f;

@@ -213,6 +213,13 @@ namespace vivianite {
             -i_ctx.get_axis("m_horizontal_axis") / 10.0f,
             0.0f
         );
+        if (i_ctx.is_pressed(KeyType::K_escape)) {
+            l_ctx.log(l_ctx.ERROR, "Shutdown: ESC pressed");
+        }
+
+        if (r_ctx.shutdown) {
+            l_ctx.log(l_ctx.ERROR, "Shutdown: GLFW window close");
+        }
 
         if (i_ctx.is_pressed(KeyType::K_escape) || r_ctx.shutdown) {
             this->s_ctx.running = false;
