@@ -69,6 +69,25 @@ namespace vivianite {
                     std::string token;
                     ss >> token;
 
+                    int vi = face.vertex[i];
+                    int ni = face.normal[i];
+                    int ti = face.UV[i];
+
+                    if (vi < 0 || vi >= (int)x_list.size()) {
+                        Logging().log(Logging::ERROR, "Invalid vertex index {}", vi);
+                        return false;
+                    }
+
+                    if (ni < 0 || ni >= (int)nx_list.size()) {
+                        Logging().log(Logging::ERROR, "Invalid normal index {}", ni);
+                        return false;
+                    }
+
+                    if (ti < 0 || ti >= (int)u_list.size()) {
+                        Logging().log(Logging::ERROR, "Invalid UV index {}", ti);
+                        return false;
+                    }
+
                     size_t s1 = token.find('/');
                     size_t s2 = token.find('/', s1 + 1);
 
