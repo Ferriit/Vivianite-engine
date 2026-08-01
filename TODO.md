@@ -22,17 +22,17 @@
     - [ ] \(Vulkan support\)
 
 ## Input system
-- [~] Input system
+- [x] Input system
     - [x] Key callbacks
     - [~] Mouse input
     - [x] Keyboard axes
     - [x] Custom keytype
     - [x] Keyboard get_event() function
     - [x] Controller support
-    - [ ] Input rebinding
+    - [x] Input rebinding
 
 ## Scheduling system
-- [ ] Scheduling system
+- [>] Scheduling system
     - [x] Function scheduling
     - [x] Move engine setup and main loop to scheduler
     - [ ] Multi-threading for some tasks
@@ -43,10 +43,10 @@
 ## Engine
 - [~] Engine
     - [x] Basic, runnable state
-    - [x] Rendering subsystem
+    - [~] Rendering subsystem
     - [x] Logging subsystem
-    - [x] Scheduling subsystem
-    - [~] Input subsystem
+    - [>] Scheduling subsystem
+    - [x] Input subsystem
     - [~] Resource manager subsystem
     - [ ] Audio subsystem
     - [ ] Serializer subsystem

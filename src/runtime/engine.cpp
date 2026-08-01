@@ -41,11 +41,25 @@ namespace vivianite {
         i_ctx.set_axis("k_vertical_axis", (Axis){
             .keys = std::optional(std::pair<KeyType, KeyType>(KeyType::K_w, KeyType::K_s)),
             .analog = std::optional(KeyType::C_left_y),
+            .mouse_analog = std::nullopt
         });
 
         i_ctx.set_axis("k_horizontal_axis", (Axis){
             .keys = std::optional(std::pair<KeyType, KeyType>(KeyType::K_d, KeyType::K_a)),
             .analog = std::optional(KeyType::C_left_x),
+            .mouse_analog = std::nullopt
+        });
+
+        i_ctx.set_axis("m_vertical_axis", (Axis){
+            .keys = std::nullopt,
+            .analog = std::optional(KeyType::C_right_y),
+            .mouse_analog = std::optional(KeyType::M_y)
+        });
+
+        i_ctx.set_axis("m_horizontal_axis", (Axis){
+            .keys = std::nullopt,
+            .analog = std::optional(KeyType::C_right_x),
+            .mouse_analog = std::optional(KeyType::M_x)
         });
 
         r_ctx.i_ctx = &i_ctx;
@@ -179,6 +193,12 @@ namespace vivianite {
             i_ctx.get_axis("k_horizontal_axis"),
             i_ctx.get_axis("k_vertical_axis"),
             5.0f
+        );
+
+        r_ctx.camera_rot += glm::vec3(
+            i_ctx.get_axis("m_vertical_axis") / 10.0f,
+            -i_ctx.get_axis("m_horizontal_axis") / 10.0f,
+            0.0f
         );
 
         if (i_ctx.is_pressed(KeyType::K_escape) || r_ctx.shutdown) {

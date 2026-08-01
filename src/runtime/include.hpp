@@ -472,35 +472,49 @@ namespace vivianite {
     struct Axis {
         std::optional<std::pair<KeyType, KeyType>> keys;
         std::optional<KeyType> analog;
+        std::optional<KeyType> mouse_analog;
     };
 
     class Input {
         private:
             static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
-
             std::unordered_map<std::string, Axis> input_axes;
+            std::unordered_map<std::string, KeyType> actions;
+
+            double last_mouse_x = 0.0;
+            double last_mouse_y = 0.0;
+
+            double abs_mouse_x = 0.0;
+            double abs_mouse_y = 0.0;
+            double rel_mouse_x = 0.0;
+            double rel_mouse_y = 0.0;
+
         public:
             std::vector<std::function<void(KeyEvent)>> key_callbacks;
-
-                std::array<bool, KeyType::K_unknown + 1> keys;
-
+            std::array<bool, KeyType::K_unknown + 1> keys;
             std::array<float, KeyType::C_right_trigger - KeyType::C_left_x + 1> analog_axes;
 
             float deadzone = 0.15f;
+            float mouse_sensitivity = 0.03f;
             
             void* r_ptr = nullptr;
 
             float apply_deadzone(float value);
 
+            ~Input();
+
             void initialize();
             void update();
 
-            float get_axis(std::string name);
+            bool get_action(std::string action_name);
+            void set_action(std::string action_name, KeyType key);
 
+            float get_axis(std::string name);
             void set_axis(std::string name, Axis axis);
 
             KeyType glfw_to_keytype(int key);
             KeyType glfw_gamepad_button_to_keytype(int button);
+            int keytype_to_glfw_mouse(int button);
             int keytype_to_glfw_joystick(KeyType key);
             int keytype_to_glfw_gamepad_button(KeyType key);
 

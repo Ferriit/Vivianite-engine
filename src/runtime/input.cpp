@@ -5,6 +5,10 @@ namespace vivianite {
         auto* r_ctx = (renderer*)r_ptr;
 
         glfwSetKeyCallback(r_ctx->window, key_callback);
+
+        glfwSetInputMode(r_ctx->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        if (glfwRawMouseMotionSupported())
+            glfwSetInputMode(r_ctx->window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
     }
 
     void Input::key_callback(GLFWwindow* window, int key, [[maybe_unused]]int scancode, int action, int mods) {
@@ -28,7 +32,17 @@ namespace vivianite {
         }
     }
 
+    Input::~Input() {
+        auto* r_ctx = (renderer*)r_ptr;
+        glfwSetInputMode(r_ctx->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+
     void Input::update() {
+        auto* r_ctx = (renderer*)r_ptr;
+
+        this->last_mouse_x = this->abs_mouse_x;
+        this->last_mouse_y = this->abs_mouse_y;
+
         for (int i = KeyType::C_JOYSTICK_1; i < KeyType::C_JOYSTICK_16 + 1; i++) {
             if (glfwJoystickPresent(keytype_to_glfw_joystick((KeyType)i)) && glfwJoystickIsGamepad(keytype_to_glfw_joystick((KeyType)i))) {
                 GLFWgamepadstate state;
@@ -55,7 +69,19 @@ namespace vivianite {
             }
         }
 
+        glfwGetCursorPos(r_ctx->window, &this->abs_mouse_x, &this->abs_mouse_y);
+        this->rel_mouse_x = this->last_mouse_x - this->abs_mouse_x;
+        this->rel_mouse_y = this->last_mouse_y - this->abs_mouse_y;
+
         glfwPollEvents();
+    }
+
+    bool Input::get_action(std::string action_name) {
+        return this->is_pressed(this->actions[action_name]);
+    }
+
+    void Input::set_action(std::string action_name, KeyType key) {
+        this->actions[action_name] = key;
     }
 
     float Input::get_axis(std::string name) {
@@ -69,11 +95,24 @@ namespace vivianite {
 
         float joystick_axis = 0.0f;
         if (axis.analog.has_value()) {
-            joystick_axis = analog_axes[axis.analog.value() - KeyType::C_left_x];
+            joystick_axis = this->analog_axes[axis.analog.value() - KeyType::C_left_x];
 
             if ((axis.analog.value() == C_left_y) || (axis.analog.value() == C_right_y))
                 joystick_axis = -joystick_axis;
         }
+
+        float mouse_axis = 0.0f;
+        if (axis.mouse_analog.has_value()) {
+            if (axis.mouse_analog.value() == KeyType::M_x) {
+                mouse_axis = -this->rel_mouse_x;
+            }
+            else if (axis.mouse_analog.value() == KeyType::M_y) {
+                mouse_axis = this->rel_mouse_y;
+            }
+
+            mouse_axis *= this->mouse_sensitivity;
+        }
+        float analog_axis = std::abs(joystick_axis) > std::abs(mouse_axis) ? joystick_axis : mouse_axis;
 
         float keyboard_axis = 0.0f;
         if (axis.keys.has_value()) {
@@ -81,7 +120,7 @@ namespace vivianite {
             keyboard_axis = keys[positive] - keys[negative];
         }
 
-        return std::abs(joystick_axis) > std::abs(keyboard_axis) ? joystick_axis : keyboard_axis;
+        return std::abs(analog_axis) > std::abs(keyboard_axis) ? analog_axis : keyboard_axis;
     }
 
     void Input::set_axis(std::string name, Axis axis) {
@@ -373,6 +412,21 @@ namespace vivianite {
 
             default:
                 return K_unknown;
+        }
+    }
+
+    int Input::keytype_to_glfw_mouse(int button) {
+        switch (button) {
+            case KeyType::M_lmb: return GLFW_MOUSE_BUTTON_LEFT;
+            case KeyType::M_mmb: return GLFW_MOUSE_BUTTON_MIDDLE;
+            case KeyType::M_rmb: return GLFW_MOUSE_BUTTON_RIGHT;
+
+            case KeyType::M_4: return GLFW_MOUSE_BUTTON_4;
+            case KeyType::M_5: return GLFW_MOUSE_BUTTON_5;
+            case KeyType::M_6: return GLFW_MOUSE_BUTTON_6;
+            case KeyType::M_7: return GLFW_MOUSE_BUTTON_7;
+            case KeyType::M_8: return GLFW_MOUSE_BUTTON_8;
+            default: return -1;
         }
     }
 };
