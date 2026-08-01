@@ -153,4 +153,79 @@ namespace vivianite {
 
         return true;
     }
+
+    bool ResourceManager::tex_load_obj(ResourceID ID) {
+        if (is_loaded(ID))
+            return true;
+
+        auto [loaded, obj, path] = objects[ID];
+
+        int width, height, channels;
+        stbi_set_flip_vertically_on_load(true);
+        unsigned char* data = stbi_load(path.c_str(), &width, &height, &channels, 0);
+
+        if (!data)
+            return false;
+
+        GLuint texture;
+        glGenTextures(1, &texture);
+        glBindTexture(GL_TEXTURE_2D, texture);
+
+        Texture tex_template = *static_pointer_cast<Texture>(obj);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, tex_template.wraping);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, tex_template.wraping);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, tex_template.min_filtering);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, tex_template.mag_filtering);
+
+        GLenum format = GL_RGB;
+
+        switch (channels) {
+            case 1: format = GL_RED; break;
+            case 2: format = GL_RG; break;
+            case 3: format = GL_RGB; break;
+            case 4: format = GL_RGBA; break;
+        }
+
+        GLenum internal_format = GL_RGB8;
+
+        switch (channels) {
+            case 1: internal_format = GL_R8; break;
+            case 2: internal_format = GL_RG8; break;
+            case 3: internal_format = GL_RGB8; break;
+            case 4: internal_format = GL_RGBA8; break;
+        }
+
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            internal_format,
+            width,
+            height,
+            0,
+            format,
+            GL_UNSIGNED_BYTE,
+            data
+        );
+
+        glGenerateMipmap(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        stbi_image_free(data);
+
+        auto tex = std::make_shared<Texture>();
+
+        tex->wraping = tex_template.wraping;
+        tex->min_filtering = tex_template.min_filtering;
+        tex->mag_filtering = tex_template.mag_filtering;
+        tex->texture = texture;
+
+        objects[ID] = {
+            true,
+            std::static_pointer_cast<void>(tex),
+            path
+        };
+
+        return true;
+    }
 };

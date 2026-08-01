@@ -40,10 +40,11 @@ namespace vivianite {
         GLuint frag, vert, program;
     };
 
-    struct texture {
-        GLenum warping; // GL_REPEAT, GL_MIRRORED_REPEAT, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_BORDER
-        GLenum filtering; // GL_NEAREST, GL_LINEAR
-        GLint texture;
+    struct Texture {
+        GLenum wraping; // GL_REPEAT, GL_MIRRORED_REPEAT, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_BORDER
+        GLenum min_filtering; // GL_NEAREST, GL_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR
+        GLenum mag_filtering; // GL_NEAREST, GL_LINEAR
+        GLuint texture;
     };
 
     // TODO: Add a material format
@@ -123,6 +124,8 @@ namespace vivianite {
             }
 
             bool obj_load_obj(ResourceID ID);
+
+            bool tex_load_obj(ResourceID ID);
     };
 
     class Time {

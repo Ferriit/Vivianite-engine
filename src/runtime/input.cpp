@@ -21,7 +21,7 @@ namespace vivianite {
             .mods = mods
         };
 
-        i_ctx->keys[i_ctx->glfw_to_keytype(key)] = action == GLFW_PRESS;
+        i_ctx->keys[i_ctx->glfw_to_keytype(key)] = action != GLFW_RELEASE;
 
         for (auto& callback : i_ctx->key_callbacks) {
             callback(event);
@@ -40,7 +40,7 @@ namespace vivianite {
                         if ((button == -1) || (button == KeyType::K_unknown))
                             continue;
 
-                        keys[j] = state.buttons[button] == GLFW_PRESS;
+                        keys[j] = state.buttons[button] != GLFW_RELEASE;
                     }
 
                     for (int j = KeyType::C_left_x; j < KeyType::C_right_trigger + 1; j++) {
