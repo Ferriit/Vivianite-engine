@@ -1,6 +1,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "include.hpp"
 
+vivianite::Time::timestamp elapsed_time = 0;
+
 namespace vivianite {
     engine::engine() : r_ctx(&l_ctx) {
         s_ctx.r_ctx = (void*)(&this->r_ctx);
@@ -33,6 +35,7 @@ namespace vivianite {
             this->status = 1;
             return;
         }
+        elapsed_time = Time().get_time();
 
         r_ctx.initialize();
 
@@ -96,6 +99,16 @@ namespace vivianite {
             },
         };
         this->s_ctx.add_task(main_loop_tsk);
+
+        Scheduler::Task fixed_loop_tks = (Scheduler::Task) {
+            .run_type = Scheduler::Task::INTERVAL,
+            .interval=20,
+            .multi_threaded=true,
+            .callback = [this]() {
+                this->fixed_update();
+            },
+        };
+        this->s_ctx.add_task(fixed_loop_tks);
 
         r_ctx.run();
     }
@@ -175,7 +188,7 @@ namespace vivianite {
 
         r_ctx.init_FBOs();
 
-        l_ctx.log(Logging::log_level::NOTICE, "ENGINE SETUP DONE");
+        l_ctx.log(Logging::log_level::NOTICE, "ENGINE SETUP DONE. TOOK {}ms", Time().get_time() - elapsed_time);
     }
 
     void engine::update() {
@@ -207,6 +220,12 @@ namespace vivianite {
         }
     }
 
+    void engine::fixed_update() {
+        l_ctx.log(Logging::log_level::DEBUG, "Fixed Update. elapsed_time={}", Time().get_time() - elapsed_time);
+
+        elapsed_time = Time().get_time();
+    }
+
     void engine::exit() {
         l_ctx.log(Logging::log_level::INFO, "{} FPS ({} ms)", 1 / r_ctx.delta_time, r_ctx.delta_time * 1000.0f);
     }
@@ -214,6 +233,8 @@ namespace vivianite {
 
 
 int main() {
+    elapsed_time = vivianite::Time().get_time();
+
     vivianite::engine ctx;
 
     return ctx.status;

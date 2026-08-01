@@ -260,6 +260,7 @@ namespace vivianite {
             Time::timestamp next_run;
             Time::timestamp interval;
             Time::timestamp delay;
+            bool multi_threaded = false;
 
             // ENGINE REFERENCE ↓
             std::function<void()> callback;
@@ -284,6 +285,8 @@ namespace vivianite {
                 void add_task(Task tsk);
 
                 void main_loop();
+
+                void thread_loop();
         };
     };
 
@@ -647,11 +650,9 @@ namespace vivianite {
             engine();
 
             void init();
-
             void setup();
-
             void update();
-
+            void fixed_update();
             void exit();
 
         private:
