@@ -518,9 +518,9 @@ namespace vivianite {
 
             GLFWwindow* window;
             shader program;
-            GLuint depth_program;
-            GLuint tile_culling_program;
-            GLuint tile_culling_init_program;
+            GLuint depth_program = 0;
+            GLuint tile_culling_program = 0;
+            GLuint tile_culling_init_program = 0;
 
             int gl_major_version = 4;
             int gl_minor_version = 6;

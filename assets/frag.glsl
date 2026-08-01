@@ -42,7 +42,7 @@ uniform Material material;
 
 uniform vec3 camera_pos;
 
-uniform int light_count;
+uniform uint light_count;
 
 uniform sampler2D depth_texture;
 uniform vec2 screen_size;
@@ -105,4 +105,5 @@ void main() {
     }
 
     FragColor = vec4(result, 1.0);
+    FragColor = vec4(1.0, 0.0, 0.0, 1.0);
 }

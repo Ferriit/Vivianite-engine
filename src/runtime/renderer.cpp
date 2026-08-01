@@ -108,6 +108,19 @@ namespace vivianite {
         glAttachShader(this->program.program, this->program.frag);
 
         glLinkProgram(this->program.program);
+
+        GLint isLinked = 0;
+        glGetProgramiv(this->program.program, GL_LINK_STATUS, &isLinked);
+
+        if (isLinked == GL_FALSE) {
+            char infoLog[512];
+            glGetProgramInfoLog(this->program.program, 512, nullptr, infoLog);
+
+            logger->log(logger->FATAL, "Shader program link error:\n%s", infoLog);
+
+            glDeleteProgram(this->program.program);
+            return;
+        }
     }
 
     void renderer::create_depth_program(std::string path) {
@@ -150,8 +163,6 @@ namespace vivianite {
         glAttachShader(program, shader);
         glLinkProgram(program);
 
-        glDeleteShader(shader);
-
         GLint isLinked = 0;
 
         glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
@@ -166,6 +177,8 @@ namespace vivianite {
 
             return;
         }
+
+        glDeleteShader(shader);
 
         this->depth_program = program;
     }
@@ -425,6 +438,7 @@ namespace vivianite {
         glfwSetWindowSize(window, this->width, this->height);
         glfwSwapInterval(this->vsync);
 
+        glUseProgram(this->program.program);
         glUniformMatrix4fv(
             glGetUniformLocation(this->program.program, "projection"),
             1,
@@ -453,6 +467,10 @@ namespace vivianite {
     }
 
     void renderer::render_depth_buffer() {
+        if (depth_program == 0) {
+            logger->log(logger->FATAL, "Depth program was not created");
+        }
+
         glBindFramebuffer(GL_FRAMEBUFFER, depth_fbo);
 
         glUseProgram(depth_program);
@@ -505,11 +523,6 @@ namespace vivianite {
             1,
             GL_FALSE,
             glm::value_ptr(this->projection)
-        );
-
-        glUniform1i(
-            glGetUniformLocation(this->tile_culling_program, "light_count"),
-            static_cast<int>(this->lights.size())
         );
 
         for (model obj : this->render_queue) {
@@ -617,9 +630,9 @@ namespace vivianite {
         );
 
         // Lights
-        glUniform1i(
+        glUniform1ui(
             glGetUniformLocation(this->program.program, "light_count"),
-            static_cast<int>(this->lights.size())
+            static_cast<unsigned int>(this->lights.size())
         );
 
         glUniform2f(
@@ -635,13 +648,18 @@ namespace vivianite {
             GL_FRAMEBUFFER_BARRIER_BIT |
             GL_TEXTURE_FETCH_BARRIER_BIT
         );
-        glBindTextureUnit(0, this->depth_texture);
 
         // Light culling
-        glUseProgram(this->tile_culling_program);
+        glUseProgram(this->tile_culling_init_program);
+        glBindTextureUnit(0, this->depth_texture);
 
-        GLint loc_tx = glGetUniformLocation(this->tile_culling_program, "tiles_x");
-        GLint loc_ty = glGetUniformLocation(this->tile_culling_program, "tiles_y");
+        glUniform1i(
+            glGetUniformLocation(this->tile_culling_init_program, "depth_texture"),
+            0
+        );
+
+        GLint loc_tx = glGetUniformLocation(this->tile_culling_init_program, "tiles_x");
+        GLint loc_ty = glGetUniformLocation(this->tile_culling_init_program, "tiles_y");
 
         uint32_t tiles_x = (this->width + 15) / 16;
         uint32_t tiles_y = (this->height + 15) / 16;
@@ -658,16 +676,6 @@ namespace vivianite {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, this->tile_light_ssbo);
 
         glUniform1ui(
-            glGetUniformLocation(this->tile_culling_init_program, "tiles_x"),
-            tiles_x
-        );
-
-        glUniform1ui(
-            glGetUniformLocation(this->tile_culling_init_program, "tiles_y"),
-            tiles_y
-        );
-
-        glUniform1ui(
             glGetUniformLocation(this->tile_culling_init_program, "max_lights_per_tile"),
             MAX_LIGHTS_PER_TILE
         );
@@ -680,6 +688,13 @@ namespace vivianite {
 
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
         glUseProgram(this->tile_culling_program);
+        
+        glBindTextureUnit(0, this->depth_texture);
+
+        glUniform1i(
+            glGetUniformLocation(this->tile_culling_program, "depth_texture"),
+            0
+        );
 
         loc_tx = glGetUniformLocation(this->tile_culling_program, "tiles_x");
         loc_ty = glGetUniformLocation(this->tile_culling_program, "tiles_y");
@@ -687,7 +702,7 @@ namespace vivianite {
 
         glUniform1ui(loc_tx, tiles_x);
         glUniform1ui(loc_ty, tiles_y);
-        glUniform1i(loc_lc, (int)this->lights.size());
+        glUniform1ui(loc_lc, (unsigned int)this->lights.size());
 
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, this->light_ssbo);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, this->tile_ssbo);
@@ -704,7 +719,7 @@ namespace vivianite {
         );
         glUniform1ui(
             glGetUniformLocation(this->tile_culling_program, "light_count"),
-            static_cast<int>(this->lights.size())
+            static_cast<unsigned int>(this->lights.size())
         );
 
         glDispatchCompute(

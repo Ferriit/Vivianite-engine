@@ -9,6 +9,8 @@ pkgs.mkShell {
   
     pkgs.libffi
     pkgs.libGL
+
+    pkgs.mesa-demos
   
     pkgs.xorg.libX11
     pkgs.xorg.libXrandr

@@ -25,7 +25,7 @@ run: runtime
 	./build/Vivianite
 
 debug: runtime_dbg
-	gdb ./build/Vivianite
+	MESA_DEBUG=context gdb ./build/Vivianite
 
 clean:
 	rm -rf build/ dist/
