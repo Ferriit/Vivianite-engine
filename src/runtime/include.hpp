@@ -18,6 +18,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <sstream>
+#include <cmath>
+#include <algorithm>
 
 #include <format>
 #include <deque>
@@ -459,7 +461,8 @@ namespace vivianite {
         M_2 = M_mmb,
         M_3 = M_rmb,
 
-        K_unknown = M_8 + 1
+        K_unknown = M_8 + 1,
+        K_none
     };
 
     enum KeyAction {
@@ -475,9 +478,11 @@ namespace vivianite {
     };
 
     struct Axis {
-        std::optional<std::pair<KeyType, KeyType>> keys;
+        std::optional<std::vector<std::pair<KeyType, KeyType>>> keys;
         std::optional<KeyType> analog;
         std::optional<KeyType> mouse_analog;
+
+        bool time_scaled = false;
     };
 
     class Input {
@@ -506,7 +511,7 @@ namespace vivianite {
 
         public:
             std::vector<std::function<void(KeyEvent)>> key_callbacks;
-            std::array<bool, KeyType::K_unknown + 1> keys{};
+            std::array<bool, KeyType::K_none + 1> keys{};
             std::array<float, KeyType::C_right_trigger - KeyType::C_left_x + 1> analog_axes{};
 
             float deadzone = 0.15f;

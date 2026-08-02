@@ -45,13 +45,17 @@ namespace vivianite {
         i_ctx.initialize();
 
         i_ctx.set_axis("k_vertical_axis", (Axis){
-            .keys = std::optional(std::pair<KeyType, KeyType>(KeyType::K_w, KeyType::K_s)),
+            .keys = std::optional(std::vector<std::pair<KeyType, KeyType>>{
+                {KeyType::K_w, KeyType::K_s}
+            }),
             .analog = std::optional(KeyType::C_left_y),
             .mouse_analog = std::nullopt
         });
 
         i_ctx.set_axis("k_horizontal_axis", (Axis){
-            .keys = std::optional(std::pair<KeyType, KeyType>(KeyType::K_d, KeyType::K_a)),
+            .keys = std::optional(std::vector<std::pair<KeyType, KeyType>>{
+                {KeyType::K_d, KeyType::K_a}
+            }),
             .analog = std::optional(KeyType::C_left_x),
             .mouse_analog = std::nullopt
         });
@@ -59,13 +63,33 @@ namespace vivianite {
         i_ctx.set_axis("m_vertical_axis", (Axis){
             .keys = std::nullopt,
             .analog = std::optional(KeyType::C_right_y),
-            .mouse_analog = std::optional(KeyType::M_y)
+            .mouse_analog = std::optional(KeyType::M_y),
+            .time_scaled = true
         });
 
         i_ctx.set_axis("m_horizontal_axis", (Axis){
             .keys = std::nullopt,
             .analog = std::optional(KeyType::C_right_x),
-            .mouse_analog = std::optional(KeyType::M_x)
+            .mouse_analog = std::optional(KeyType::M_x),
+            .time_scaled = true
+        });
+
+        i_ctx.set_axis("k_jump", (Axis){
+            .keys = std::optional(std::vector<std::pair<KeyType, KeyType>>{
+                {KeyType::K_space, KeyType::K_none},
+                {KeyType::C_a, KeyType::K_none},
+            }),
+            .analog = std::nullopt,
+            .mouse_analog = std::nullopt
+        });
+
+        i_ctx.set_axis("k_crouch", (Axis){
+            .keys = std::optional(std::vector<std::pair<KeyType, KeyType>>{
+                {KeyType::K_left_control, KeyType::K_none},
+                {KeyType::C_b, KeyType::K_none},
+            }),
+            .analog = std::nullopt,
+            .mouse_analog = std::nullopt
         });
 
         r_ctx.i_ctx = &i_ctx;
@@ -152,7 +176,7 @@ namespace vivianite {
         l_ctx.log(Logging::INFO, "Uploading models");
         r_ctx.render_queue.push_back(cube_model);
 
-        r_ctx.vsync = VIVIANITE_VSYNC_TRUE;
+        r_ctx.vsync = VIVIANITE_VSYNC_FALSE;
         r_ctx.apply_settings();
 
         l_ctx.log(Logging::INFO, "Uploading lights");
@@ -199,23 +223,32 @@ namespace vivianite {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Rotate
-        r_ctx.render_queue[0].rotation.y += 0.03f;  
-        r_ctx.render_queue[0].rotation.x += 0.03f;
-        r_ctx.render_queue[0].rotation.z += 0.03f;
+        r_ctx.render_queue[0].rotation.y += 1.0f * r_ctx.delta_time;  
+        r_ctx.render_queue[0].rotation.x += 1.0f * r_ctx.delta_time;
+        r_ctx.render_queue[0].rotation.z += 1.0f * r_ctx.delta_time;
 
         l_ctx.log(Logging::log_level::DEBUG, "Mouse: {} {} {}", i_ctx.is_pressed(KeyType::M_lmb), i_ctx.is_pressed(KeyType::M_mmb), i_ctx.is_pressed(KeyType::M_rmb));
-
-        r_ctx.camera_pos = glm::vec3(
-            i_ctx.get_axis("k_horizontal_axis"),
-            i_ctx.get_axis("k_vertical_axis"),
-            5.0f
-        );
 
         r_ctx.camera_rot += glm::vec3(
             i_ctx.get_axis("m_vertical_axis") / 10.0f,
             -i_ctx.get_axis("m_horizontal_axis") / 10.0f,
             0.0f
         );
+
+        glm::mat4 rot(1.0f);
+        rot = glm::rotate(rot, r_ctx.camera_rot.x, glm::vec3(1,0,0));
+        rot = glm::rotate(rot, r_ctx.camera_rot.y, glm::vec3(0,1,0));
+        rot = glm::rotate(rot, r_ctx.camera_rot.z, glm::vec3(0,0,1));
+
+        glm::vec3 forward = glm::normalize(glm::vec3(rot * glm::vec4(0, 0, -1, 0)));
+        glm::vec3 right = glm::normalize(glm::vec3(rot * glm::vec4(1, 0, 0, 0)));
+        glm::vec3 up = glm::vec3(0, 1, 0);
+        glm::vec3 down = -up;
+
+        r_ctx.camera_pos += forward * static_cast<float>(r_ctx.delta_time) * 5.0f * i_ctx.get_axis("k_vertical_axis");
+        r_ctx.camera_pos += right * static_cast<float>(r_ctx.delta_time) * 5.0f * i_ctx.get_axis("k_horizontal_axis");
+        r_ctx.camera_pos += up * static_cast<float>(r_ctx.delta_time) * 5.0f * i_ctx.get_axis("k_jump");
+        r_ctx.camera_pos += down * static_cast<float>(r_ctx.delta_time) * 5.0f * i_ctx.get_axis("k_crouch");
 
         if (i_ctx.is_pressed(KeyType::K_escape)) {
             l_ctx.log(l_ctx.ERROR, "Shutdown: ESC pressed");
@@ -240,7 +273,14 @@ namespace vivianite {
     }
 
     void engine::exit() {
-        l_ctx.log(Logging::log_level::INFO, "{} FPS ({} ms)", frame_count / ((Time().get_time() - start_time) * 1000), ((Time().get_time() - start_time) * 1000) / frame_count);
+        double elapsed = Time().get_time() - start_time;
+
+        l_ctx.log(
+            Logging::log_level::INFO,
+            "{} FPS ({} ms)",
+            static_cast<double>(frame_count) / (elapsed / 1000.0),
+            elapsed / static_cast<double>(frame_count)
+        );
     }
 };
 

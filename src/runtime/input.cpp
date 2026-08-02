@@ -44,18 +44,9 @@ namespace vivianite {
         i_ctx->abs_mouse_scroll_y += yoffset;
     }
 
-    void Input::mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+    void Input::mouse_button_callback(GLFWwindow* window, int button, int action, [[maybe_unused]]int mods) {
         vivianite::renderer* r_ctx = (renderer*)glfwGetWindowUserPointer(window);
         Input* i_ctx = r_ctx->i_ctx;
-
-        KeyEvent event {
-            .key = i_ctx->glfw_to_keytype(button),
-            .action = 
-                action == GLFW_PRESS ? KEY_DOWN :
-                action == GLFW_RELEASE ? KEY_UP :
-                KEY_REPEAT,
-            .mods = mods
-        };
 
         i_ctx->keys[i_ctx->glfw_to_keytype(button)] = action != GLFW_RELEASE;
     }
@@ -112,6 +103,7 @@ namespace vivianite {
     }
 
     float Input::get_axis(std::string name) {
+        auto* r_ctx = (renderer*)r_ptr;
         auto it = input_axes.find(name);
 
         if (it == input_axes.end()) {
@@ -128,6 +120,9 @@ namespace vivianite {
                 joystick_axis = -joystick_axis;
         }
 
+        if (axis.time_scaled)
+            joystick_axis *= r_ctx->delta_time * 60.0f;
+
         float mouse_axis = 0.0f;
         if (axis.mouse_analog.has_value()) {
             if (axis.mouse_analog.value() == KeyType::M_x) {
@@ -143,9 +138,13 @@ namespace vivianite {
 
         float keyboard_axis = 0.0f;
         if (axis.keys.has_value()) {
-            auto [positive, negative] = axis.keys.value();
-            keyboard_axis = keys[positive] - keys[negative];
+            for (auto k: axis.keys.value()) {
+                auto [positive, negative] = k;
+                keyboard_axis += keys[positive] - keys[negative];
+            }
         }
+        keyboard_axis = std::min(keyboard_axis, 1.0f);
+        keyboard_axis = std::max(keyboard_axis, -1.0f);
 
         return std::abs(analog_axis) > std::abs(keyboard_axis) ? analog_axis : keyboard_axis;
     }
