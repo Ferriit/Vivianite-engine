@@ -3,7 +3,7 @@
 ## v0.0 (2026.0.1)
 [~] Basic renderer subsystem
 [~] Scheduler subsystem
-[~] Input subsystem
+[x] Input subsystem
 [ ] Audio subsystem
 [~] Resource Manager subsystem
 [ ] Serializer

@@ -32,11 +32,11 @@
     - [x] Input rebinding
 
 ## Scheduling system
-- [>] Scheduling system
+- [~] Scheduling system
     - [x] Function scheduling
     - [x] Move engine setup and main loop to scheduler
-    - [ ] Multi-threading for some tasks
-    - [ ] Fixed update loop
+    - [x] Multi-threading for some tasks
+    - [x] Fixed update loop
     - [ ] Task dependencies
     - [ ] Async resource loading
 
@@ -45,7 +45,7 @@
     - [x] Basic, runnable state
     - [~] Rendering subsystem
     - [x] Logging subsystem
-    - [>] Scheduling subsystem
+    - [~] Scheduling subsystem
     - [x] Input subsystem
     - [~] Resource manager subsystem
     - [ ] Audio subsystem
@@ -96,7 +96,7 @@
     - [ ] Resource reference counting
     - [ ] Async resource loading
     - [ ] Resource dependency tracking
-    - [>] Asset metadata
+    - [/] Asset metadata
     - [x] Hot reloading
     - [ ] Asset importing
 
