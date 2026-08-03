@@ -8,9 +8,13 @@
 
 #include "../external/glad/include/glad/gl.h"
 #include <GL/gl.h>
+#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include "../external/glm/glm/glm.hpp"
 #include <glm/gtc/type_ptr.hpp>
+
+#include <AL/al.h>
+#include <AL/alc.h>
 
 #include <fstream>
 #include <bits/stdc++.h>
@@ -29,6 +33,10 @@
 #include <utility>
 
 #include "../external/stb/stb_image.h"
+#define STB_VORBIS_HEADER_ONLY
+#include "../external/stb/stb_vorbis.c"
+#define STB_VORBIS_IMPLEMENTATION
+#include "../external/stb/stb_vorbis.c"
 
 #define VIVIANITE_VSYNC_TRUE 1
 #define VIVIANITE_VSYNC_FALSE 0
@@ -81,6 +89,13 @@ namespace vivianite {
     struct tile {
         uint32_t count;
         uint32_t offset;
+    };
+
+    struct Sound {
+        ALuint buffer;
+    };
+    struct AudioSource {
+        ALuint source;
     };
 
     using ResourceID = uint64_t;
@@ -539,6 +554,10 @@ namespace vivianite {
             int keytype_to_glfw_gamepad_button(KeyType key);
 
             bool is_pressed(KeyType key);
+    };
+
+    class Audio {
+        
     };
 
     // RENDERER

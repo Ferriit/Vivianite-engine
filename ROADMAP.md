@@ -9,9 +9,9 @@
 [ ] Serializer
 [ ] Scene subsystem
 [ ] Scripting
-[ ] Small documentation
 [ ] ECS subsystem
 [ ] Simple build system
+[ ] Small documentation
 
 [ ] Proper website
 

@@ -80,7 +80,7 @@
     - [ ] Ray casting
 
 ## Audio
-- [ ] Audio system
+- [~] Audio system
     - [ ] Sound effects
     - [ ] Music playback
     - [ ] 3D spatial audio

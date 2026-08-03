@@ -7,3 +7,9 @@
 [submodule "external/stb"]
 	path = external/stb
 	url = https://github.com/nothings/stb.git
+[submodule "external/openal-soft"]
+	path = external/openal-soft
+	url = https://github.com/kcat/openal-soft.git
+[submodule "external/dr_libs"]
+	path = external/dr_libs
+	url = https://github.com/mackron/dr_libs

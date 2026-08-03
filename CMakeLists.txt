@@ -92,6 +92,7 @@ endif()
 
 # Build GLFW from submodule/source
 add_subdirectory(external/glfw)
+add_subdirectory(external/openal-soft)
 
 file(GLOB_RECURSE SOURCES
     src/runtime/*.cpp
@@ -130,6 +131,7 @@ target_link_libraries(Vivianite PRIVATE
     glm
     glfw
     OpenGL::GL
+    OpenAL::OpenAL
 )
 
 if(MSVC)
