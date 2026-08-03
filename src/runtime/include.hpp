@@ -33,10 +33,9 @@
 #include <utility>
 
 #include "../external/stb/stb_image.h"
-#define STB_VORBIS_HEADER_ONLY
-#include "../external/stb/stb_vorbis.c"
-#define STB_VORBIS_IMPLEMENTATION
-#include "../external/stb/stb_vorbis.c"
+
+#include "../external/dr_libs/dr_wav.h"
+#include "../external/dr_libs/dr_mp3.h"
 
 #define VIVIANITE_VSYNC_TRUE 1
 #define VIVIANITE_VSYNC_FALSE 0
@@ -557,7 +556,13 @@ namespace vivianite {
     };
 
     class Audio {
-        
+        public:
+            Logging* l_ctx = nullptr;
+
+            ALCdevice* device = nullptr;
+            ALCcontext* ctx = nullptr;
+
+            bool init();
     };
 
     // RENDERER
@@ -668,6 +673,8 @@ namespace vivianite {
             vivianite::renderer r_ctx;
 
             Scheduler::Scheduler s_ctx;
+
+            Audio a_ctx;
 
             Input i_ctx;
 

@@ -1,4 +1,3 @@
-#define STB_IMAGE_IMPLEMENTATION
 #include "include.hpp"
 
 vivianite::Time::timestamp elapsed_time = 0;
@@ -13,6 +12,8 @@ namespace vivianite {
         s_ctx.l_ctx = &l_ctx;
 
         i_ctx.r_ptr = (void*)&r_ctx;
+
+        a_ctx.l_ctx = &l_ctx;
         
         Scheduler::Task e_init = (Scheduler::Task) {
             .run_type = Scheduler::Task::ASAP,
@@ -227,8 +228,6 @@ namespace vivianite {
         r_ctx.render_queue[0].rotation.x += 1.0f * r_ctx.delta_time;
         r_ctx.render_queue[0].rotation.z += 1.0f * r_ctx.delta_time;
 
-        l_ctx.log(Logging::log_level::DEBUG, "Mouse: {} {} {}", i_ctx.is_pressed(KeyType::M_lmb), i_ctx.is_pressed(KeyType::M_mmb), i_ctx.is_pressed(KeyType::M_rmb));
-
         r_ctx.camera_rot += glm::vec3(
             i_ctx.get_axis("m_vertical_axis") / 10.0f,
             -i_ctx.get_axis("m_horizontal_axis") / 10.0f,
@@ -267,8 +266,6 @@ namespace vivianite {
     }
 
     void engine::fixed_update() {
-        l_ctx.log(Logging::log_level::DEBUG, "Fixed Update. elapsed_time={}", Time().get_time() - elapsed_time);
-
         elapsed_time = Time().get_time();
     }
 

@@ -10,6 +10,7 @@ pkgs.mkShell {
   
     pkgs.libffi
     pkgs.libGL
+    pkgs.openal
 
     pkgs.mesa-demos
   

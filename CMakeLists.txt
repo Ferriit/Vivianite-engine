@@ -92,7 +92,6 @@ endif()
 
 # Build GLFW from submodule/source
 add_subdirectory(external/glfw)
-add_subdirectory(external/openal-soft)
 
 file(GLOB_RECURSE SOURCES
     src/runtime/*.cpp
@@ -116,6 +115,7 @@ target_include_directories(glm INTERFACE
 
 # OpenGL
 find_package(OpenGL REQUIRED)
+find_package(OpenAL REQUIRED)
 
 # Executable
 add_executable(Vivianite
