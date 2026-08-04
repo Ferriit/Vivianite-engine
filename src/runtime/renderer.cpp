@@ -433,16 +433,22 @@ namespace vivianite {
         glfwSwapInterval(this->vsync);
 
         GLFWimage icon;
+
         icon.pixels = stbi_load(
-            "assets/icon.png",
+            "assets/logo.png",
             &icon.width,
             &icon.height,
             nullptr,
             4
         );
-        glfwSetWindowIcon(window, 1, &icon);
 
-        stbi_image_free(icon.pixels);
+        if (icon.pixels == nullptr) {
+            Logging().log(Logging::ERROR, "Failed to load icon: {}", stbi_failure_reason());
+        }
+        else {
+            glfwSetWindowIcon(window, 1, &icon);
+            stbi_image_free(icon.pixels);
+        }
 
         return true;
     }
