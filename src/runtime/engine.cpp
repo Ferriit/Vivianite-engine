@@ -45,6 +45,8 @@ namespace vivianite {
 
         i_ctx.initialize();
 
+        a_ctx.initialize();
+
         i_ctx.set_axis("k_vertical_axis", (Axis){
             .keys = std::optional(std::vector<std::pair<KeyType, KeyType>>{
                 {KeyType::K_w, KeyType::K_s}

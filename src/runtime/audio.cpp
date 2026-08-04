@@ -2,7 +2,9 @@
 #include "../external/stb/stb_vorbis.c"
 
 namespace vivianite {
-    bool Audio::init() {
+    bool Audio::initialize() {
+        l_ctx->log(Logging::INFO, "Initializing Audio system");
+
         this->device = alcOpenDevice(nullptr);
 
         if (!this->device) {

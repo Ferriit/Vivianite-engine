@@ -562,7 +562,7 @@ namespace vivianite {
             ALCdevice* device = nullptr;
             ALCcontext* ctx = nullptr;
 
-            bool init();
+            bool initialize();
     };
 
     // RENDERER
