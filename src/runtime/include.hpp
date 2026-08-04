@@ -579,6 +579,7 @@ namespace vivianite {
             void stop_sound(AudioSource src);
             void pause_sound(AudioSource src);
             void resume_sound(AudioSource src);
+            void delete_source(AudioSource src);
     };
 
     // RENDERER
