@@ -515,7 +515,7 @@ namespace vivianite {
             static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 
             std::unordered_map<std::string, Axis> input_axes;
-            std::unordered_map<std::string, KeyType> actions;
+            std::unordered_map<std::string, std::vector<KeyType>> actions;
 
             double last_mouse_x = 0.0;
             double last_mouse_y = 0.0;
@@ -550,7 +550,8 @@ namespace vivianite {
             void update();
 
             bool get_action(std::string action_name);
-            void set_action(std::string action_name, KeyType key);
+            void add_action(std::string action_name, KeyType key);
+            void clear_action(std::string action_name);
 
             float get_axis(std::string name);
             void set_axis(std::string name, Axis axis);

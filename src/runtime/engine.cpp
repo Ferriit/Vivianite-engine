@@ -95,6 +95,9 @@ namespace vivianite {
             .mouse_analog = std::nullopt
         });
 
+        i_ctx.add_action("exit", KeyType::K_escape);
+        i_ctx.add_action("exit", KeyType::C_start);
+
         r_ctx.i_ctx = &i_ctx;
 
         r_ctx.program.frag_path = "assets/frag.glsl";
@@ -251,7 +254,7 @@ namespace vivianite {
         r_ctx.camera_pos += up * static_cast<float>(r_ctx.delta_time) * 5.0f * i_ctx.get_axis("k_jump");
         r_ctx.camera_pos += down * static_cast<float>(r_ctx.delta_time) * 5.0f * i_ctx.get_axis("k_crouch");
 
-        if (i_ctx.is_pressed(KeyType::K_escape)) {
+        if (i_ctx.get_action("exit")) {
             l_ctx.log(l_ctx.ERROR, "Shutdown: ESC pressed");
         }
 
@@ -259,7 +262,7 @@ namespace vivianite {
             l_ctx.log(l_ctx.ERROR, "Shutdown: GLFW window close");
         }
 
-        if (i_ctx.is_pressed(KeyType::K_escape) || r_ctx.shutdown) {
+        if (i_ctx.get_action("exit") || r_ctx.shutdown) {
             this->s_ctx.running = false;
             r_ctx.exit();
         }

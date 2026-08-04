@@ -95,11 +95,23 @@ namespace vivianite {
     }
 
     bool Input::get_action(std::string action_name) {
-        return this->is_pressed(this->actions[action_name]);
+        bool key_pressed = false;
+
+        for (auto k: this->actions[action_name]) {
+            if (is_pressed(k)) {
+                key_pressed = true;
+            }
+        }
+
+        return key_pressed;
     }
 
-    void Input::set_action(std::string action_name, KeyType key) {
-        this->actions[action_name] = key;
+    void Input::add_action(std::string action_name, KeyType key) {
+        this->actions[action_name].push_back(key);
+    }
+
+    void Input::clear_action(std::string action_name) {
+        this->actions[action_name] = std::vector<KeyType>();
     }
 
     float Input::get_axis(std::string name) {
