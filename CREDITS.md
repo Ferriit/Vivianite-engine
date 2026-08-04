@@ -2,11 +2,11 @@ Vivianite-engine
 Copyright (c) 2026 Ferriit
 
 Special Thanks
---------------------
-- Mario (Spaghetti) Volt (majko_676 on Discord) for Logo
+---
+- Mario (Spaghetti) Volt [\(majko\_676\)](https://discord.com/users/1016403739998949399/) for logo
 
 Third-Party Software
---------------------
+---
 - GLFW
   Copyright (c) the GLFW developers
   https://www.glfw.org/
@@ -17,6 +17,6 @@ Third-Party Software
   https://github.com/g-truc/glm
   Licensed under the MIT License.
 
-- stb_image
+- stb\_image
   Copyright (c) Sean Barrett
   Licensed under the MIT/Public Domain license.
