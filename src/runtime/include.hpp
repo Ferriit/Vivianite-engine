@@ -34,6 +34,9 @@
 
 #include "../external/stb/stb_image.h"
 
+#define STB_VORBIS_HEADER_ONLY
+#include "../external/stb/stb_vorbis.c"
+
 #include "../external/dr_libs/dr_wav.h"
 #include "../external/dr_libs/dr_mp3.h"
 
@@ -90,10 +93,14 @@ namespace vivianite {
         uint32_t offset;
     };
 
-    struct Sound {
-        ALuint buffer;
-    };
+    using Sound = ALuint;
+
     struct AudioSource {
+        float x, y, z;
+
+        float gain, pitch;
+        bool loop;
+
         ALuint source;
     };
 
@@ -146,6 +153,8 @@ namespace vivianite {
             bool obj_load_obj(ResourceID ID);
 
             bool tex_load_obj(ResourceID ID);
+
+            bool obj_load_sound(ResourceID ID);
     };
 
     class Time {
@@ -563,6 +572,13 @@ namespace vivianite {
             ALCcontext* ctx = nullptr;
 
             bool initialize();
+            std::vector<std::string> get_output_devices();
+            AudioSource update_source(AudioSource templ);
+
+            void play_sound(AudioSource src, Sound snd);
+            void stop_sound(AudioSource src);
+            void pause_sound(AudioSource src);
+            void resume_sound(AudioSource src);
     };
 
     // RENDERER

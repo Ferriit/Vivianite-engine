@@ -206,6 +206,8 @@ namespace vivianite {
 
         auto [loaded, obj, path] = objects[ID];
 
+        Logging().log(Logging::INFO, "Reading file \"{}\"", path);
+
         int width, height, channels;
         stbi_set_flip_vertically_on_load(true);
         unsigned char* data = stbi_load(path.c_str(), &width, &height, &channels, 0);
@@ -271,6 +273,125 @@ namespace vivianite {
             std::static_pointer_cast<void>(tex),
             path
         };
+
+        return true;
+    }
+
+    bool ResourceManager::obj_load_sound(ResourceID ID) {
+        if (is_loaded(ID))
+            return true;
+
+        auto [loaded, obj, path] = objects[ID];
+
+        Logging().log(Logging::INFO, "Reading file \"{}\"", path);
+
+        std::vector<int16_t> samples;
+        unsigned int channels = 0;
+        unsigned int sampleRate = 0;
+
+        if (path.ends_with(".wav")) {
+            Logging().log(Logging::INFO, "Trying WAV");
+
+            drwav wav;
+
+            if (!drwav_init_file(&wav, path.c_str(), nullptr))
+                return false;
+
+            channels = wav.channels;
+            sampleRate = wav.sampleRate;
+
+            samples.resize(wav.totalPCMFrameCount * channels);
+
+            drwav_read_pcm_frames_s16(
+                &wav,
+                wav.totalPCMFrameCount,
+                samples.data()
+            );
+
+            drwav_uninit(&wav);
+        }
+        else if (path.ends_with(".ogg")) {
+            Logging().log(Logging::INFO, "Trying OGG");
+
+            int c;
+            int sr;
+            short* output;
+
+            int samples_count = stb_vorbis_decode_filename(
+                path.c_str(),
+                &c,
+                &sr,
+                &output
+            );
+
+            if (samples_count <= 0)
+                return false;
+
+            channels = c;
+            sampleRate = sr;
+
+            samples.assign(
+                output,
+                output + samples_count
+            );
+
+            free(output);
+        }
+        else if (path.ends_with(".mp3")) {
+            Logging().log(Logging::INFO, "Trying MP3");
+
+            drmp3 mp3;
+
+            if (!drmp3_init_file(&mp3, path.c_str(), nullptr))
+                return false;
+
+            channels = mp3.channels;
+            sampleRate = mp3.sampleRate;
+
+            uint64_t frames = drmp3_get_pcm_frame_count(&mp3);
+
+            samples.resize(frames * channels);
+
+            drmp3_read_pcm_frames_s16(
+                &mp3,
+                frames,
+                samples.data()
+            );
+
+            drmp3_uninit(&mp3);
+        }
+        else {
+            Logging().log(
+                Logging::ERROR,
+                "Unsupported audio format"
+            );
+            return false;
+        }
+
+
+        if (samples.empty())
+            return false;
+
+
+        ALuint buffer;
+        alGenBuffers(1, &buffer);
+
+        ALenum format = channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
+
+        alBufferData(
+            buffer,
+            format,
+            samples.data(),
+            samples.size() * sizeof(int16_t),
+            sampleRate
+        );
+
+        objects[ID] = std::tuple(true, 
+            std::static_pointer_cast<void>(
+                std::make_shared<Sound>(buffer)
+            ),
+            path
+        );
 
         return true;
     }
