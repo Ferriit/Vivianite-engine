@@ -100,15 +100,15 @@ namespace vivianite {
 
         r_ctx.i_ctx = &i_ctx;
 
-        r_ctx.program.frag_path = "assets/frag.glsl";
-        r_ctx.program.vert_path = "assets/vert.glsl";
+        r_ctx.program.frag_path = "assets/shaders/frag.glsl";
+        r_ctx.program.vert_path = "assets/shaders/vert.glsl";
 
         r_ctx.create_shaders();
 
-        r_ctx.tile_culling_program = r_ctx.create_compute_program("assets/cull.comp");
-        r_ctx.tile_culling_init_program = r_ctx.create_compute_program("assets/init_cull.comp");
+        r_ctx.tile_culling_program = r_ctx.create_compute_program("assets/shaders/cull.comp");
+        r_ctx.tile_culling_init_program = r_ctx.create_compute_program("assets/shaders/init_cull.comp");
 
-        r_ctx.create_depth_program("assets/depth.vert");
+        r_ctx.create_depth_program("assets/shaders/depth.vert");
 
         this->l_ctx.log(Logging::INFO, "Assigning functions");
         r_ctx.setup_func = [this]() {this->setup();};

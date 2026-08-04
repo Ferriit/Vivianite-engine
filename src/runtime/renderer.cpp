@@ -432,6 +432,18 @@ namespace vivianite {
 
         glfwSwapInterval(this->vsync);
 
+        GLFWimage icon;
+        icon.pixels = stbi_load(
+            "assets/icon.png",
+            &icon.width,
+            &icon.height,
+            nullptr,
+            4
+        );
+        glfwSetWindowIcon(window, 1, &icon);
+
+        stbi_image_free(icon.pixels);
+
         return true;
     }
 
