@@ -251,8 +251,14 @@ namespace vivianite {
 
         r_ctx.camera_pos += forward * static_cast<float>(r_ctx.delta_time) * 5.0f * i_ctx.get_axis("k_vertical_axis");
         r_ctx.camera_pos += right * static_cast<float>(r_ctx.delta_time) * 5.0f * i_ctx.get_axis("k_horizontal_axis");
+        #ifndef _WIN32
         r_ctx.camera_pos += up * static_cast<float>(r_ctx.delta_time) * 5.0f * i_ctx.get_axis("k_jump");
         r_ctx.camera_pos += down * static_cast<float>(r_ctx.delta_time) * 5.0f * i_ctx.get_axis("k_crouch");
+        #endif
+        #ifdef _WIN32
+        r_ctx.camera_pos += down * static_cast<float>(r_ctx.delta_time) * 5.0f * i_ctx.get_axis("k_jump");
+        r_ctx.camera_pos += up * static_cast<float>(r_ctx.delta_time) * 5.0f * i_ctx.get_axis("k_crouch");
+        #endif
 
         if (i_ctx.get_action("exit")) {
             l_ctx.log(l_ctx.ERROR, "Shutdown: ESC pressed");

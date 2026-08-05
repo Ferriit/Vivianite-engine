@@ -67,6 +67,7 @@ Testing/
 .cache/
 
 build/
+build-windows/
 dist/
 venv/
 .venv/

@@ -1,4 +1,4 @@
-.PHONY: default runtime runtime_dbg release debug clean
+.PHONY: default runtime runtime_dbg release windows_release all_release debug clean
 
 GL_VERSION := 4.6
 
@@ -15,6 +15,19 @@ runtime_dbg: glad clean_bin
 release: glad clean_bin
 	cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_LTO=ON
 	cmake --build build
+
+windows_release: glad
+	mkdir -p build-windows
+	cmake -B build-windows -G Ninja \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_TOOLCHAIN_FILE=cmake/mingw-w64.cmake \
+		-DENABLE_LTO=ON
+	cmake --build build-windows
+	cp /usr/x86_64-w64-mingw32/bin/libgcc_s_seh-1.dll build-windows/
+	cp /usr/x86_64-w64-mingw32/bin/libwinpthread-1.dll build-windows/
+	cp /usr/x86_64-w64-mingw32/bin/libstdc++-6.dll build-windows/
+
+all_release: release windows_release
 
 glad: $(GLAD_FILES)
 
@@ -33,4 +46,4 @@ clean_bin:
 	rm -f build/Release/Vivianite
 
 clean:
-	rm -rf build/ dist/
+	rm -rf build/ build-windows/ dist/

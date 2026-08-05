@@ -138,7 +138,12 @@ namespace vivianite {
         float mouse_axis = 0.0f;
         if (axis.mouse_analog.has_value()) {
             if (axis.mouse_analog.value() == KeyType::M_x) {
+                #ifndef _WIN32
                 mouse_axis = -this->rel_mouse_x;
+                #endif
+                #ifdef _WIN32
+                mouse_axis = this->rel_mouse_x;
+                #endif
             }
             else if (axis.mouse_analog.value() == KeyType::M_y) {
                 mouse_axis = this->rel_mouse_y;

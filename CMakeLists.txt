@@ -115,7 +115,23 @@ target_include_directories(glm INTERFACE
 
 # OpenGL
 find_package(OpenGL REQUIRED)
-find_package(OpenAL REQUIRED)
+
+# OpenAL
+# OpenAL
+if(WIN32)
+    add_library(OpenAL::OpenAL SHARED IMPORTED)
+
+    set_target_properties(OpenAL::OpenAL PROPERTIES
+        IMPORTED_IMPLIB
+            "${CMAKE_SOURCE_DIR}/external/openal/libOpenAL32.a"
+        IMPORTED_LOCATION
+            "${CMAKE_SOURCE_DIR}/external/openal/OpenAL32.dll"
+        INTERFACE_INCLUDE_DIRECTORIES
+            "${CMAKE_SOURCE_DIR}/external/openal/include"
+    )
+else()
+    find_package(OpenAL REQUIRED)
+endif()
 
 # Executable
 add_executable(Vivianite
@@ -133,6 +149,23 @@ target_link_libraries(Vivianite PRIVATE
     OpenGL::GL
     OpenAL::OpenAL
 )
+
+if(WIN32)
+    add_custom_command(TARGET Vivianite POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        "${CMAKE_SOURCE_DIR}/external/openal/OpenAL32.dll"
+        "$<TARGET_FILE_DIR:Vivianite>"
+    )
+endif()
+
+# Copy DLL beside executable on Windows
+if(WIN32)
+    add_custom_command(TARGET Vivianite POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        "${CMAKE_SOURCE_DIR}/external/openal/OpenAL32.dll"
+        "$<TARGET_FILE_DIR:Vivianite>"
+    )
+endif()
 
 if(MSVC)
     target_compile_options(Vivianite PRIVATE
