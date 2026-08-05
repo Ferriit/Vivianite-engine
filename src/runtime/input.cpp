@@ -48,7 +48,7 @@ namespace vivianite {
         vivianite::renderer* r_ctx = (renderer*)glfwGetWindowUserPointer(window);
         Input* i_ctx = r_ctx->i_ctx;
 
-        i_ctx->keys[i_ctx->glfw_to_keytype(button)] = action != GLFW_RELEASE;
+        i_ctx->keys[i_ctx->glfw_to_keytype_mouse(button)] = action != GLFW_RELEASE;
     }
 
     Input::~Input() {
@@ -454,6 +454,21 @@ namespace vivianite {
             case GLFW_KEY_PAUSE: return K_pause;
 
             // Mouse
+            case GLFW_MOUSE_BUTTON_LEFT: return M_lmb;
+            case GLFW_MOUSE_BUTTON_MIDDLE: return M_mmb;
+            case GLFW_MOUSE_BUTTON_RIGHT: return M_rmb;
+            case GLFW_MOUSE_BUTTON_4: return M_4;
+            case GLFW_MOUSE_BUTTON_5: return M_5;
+            case GLFW_MOUSE_BUTTON_6: return M_6;
+            case GLFW_MOUSE_BUTTON_7: return M_7;
+            case GLFW_MOUSE_BUTTON_8: return M_8;
+
+            default:
+                return K_unknown;
+        }
+    }
+    KeyType Input::glfw_to_keytype_mouse(int key) {
+        switch (key) {
             case GLFW_MOUSE_BUTTON_LEFT: return M_lmb;
             case GLFW_MOUSE_BUTTON_MIDDLE: return M_mmb;
             case GLFW_MOUSE_BUTTON_RIGHT: return M_rmb;

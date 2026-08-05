@@ -557,6 +557,7 @@ namespace vivianite {
             void set_axis(std::string name, Axis axis);
 
             KeyType glfw_to_keytype(int key);
+            KeyType glfw_to_keytype_mouse(int key);
             KeyType glfw_gamepad_button_to_keytype(int button);
             int keytype_to_glfw_mouse(int button);
             int keytype_to_glfw_joystick(KeyType key);
