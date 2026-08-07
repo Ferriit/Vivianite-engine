@@ -32,7 +32,7 @@
     - [x] Input rebinding
 
 ## Scheduling system
-- [~] Scheduling system
+- [>] Scheduling system
     - [x] Function scheduling
     - [x] Move engine setup and main loop to scheduler
     - [x] Multi-threading for some tasks
@@ -43,12 +43,12 @@
 ## Engine
 - [~] Engine
     - [x] Basic, runnable state
-    - [~] Rendering subsystem
+    - [>] Rendering subsystem
     - [x] Logging subsystem
-    - [~] Scheduling subsystem
+    - [>] Scheduling subsystem
     - [x] Input subsystem
-    - [~] Resource manager subsystem
-    - [ ] Audio subsystem
+    - [>] Resource manager subsystem
+    - [>] Audio subsystem
     - [ ] Serializer subsystem
     - [ ] Networking subsystem
     - [ ] Scene system
@@ -80,10 +80,10 @@
     - [ ] Ray casting
 
 ## Audio
-- [~] Audio system
-    - [ ] Sound effects
-    - [ ] Music playback
-    - [ ] 3D spatial audio
+- [>] Audio system
+    - [~] Sound effects
+    - [x] Music playback
+    - [x] 3D spatial audio
     - [ ] Audio mixer
     - [ ] Audio events
 
