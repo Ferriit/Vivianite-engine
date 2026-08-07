@@ -1,4 +1,5 @@
 #include "include.hpp"
+#define PI 3.14159265f
 
 vivianite::Time::timestamp elapsed_time = 0;
 vivianite::Time::timestamp start_time = 0;
@@ -239,6 +240,8 @@ namespace vivianite {
     }
 
     void engine::update() {
+        glm::vec3 old_rotation = r_ctx.camera_rot;
+
         glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -252,6 +255,9 @@ namespace vivianite {
             -i_ctx.get_axis("m_horizontal_axis") / 10.0f,
             0.0f
         );
+
+        if ((r_ctx.camera_rot.x > (PI / 2.0f)) || (r_ctx.camera_rot.x < -(PI / 2.0f)))
+            r_ctx.camera_rot = old_rotation;
 
         glm::mat4 rot(1.0f);
         rot = glm::rotate(rot, r_ctx.camera_rot.x, glm::vec3(1,0,0));
