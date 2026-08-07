@@ -51,8 +51,8 @@
     - [>] Audio subsystem
     - [ ] Serializer subsystem
     - [ ] Networking subsystem
-    - [ ] Scene system
-    - [ ] ECS / Module system
+    - [~] Scene system
+    - [~] ECS / Module system
     - [ ] Scriptable modules
     - [ ] Configuration system
     - [ ] Built-in physics engine
