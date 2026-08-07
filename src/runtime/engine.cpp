@@ -149,6 +149,20 @@ namespace vivianite {
     void engine::setup() {
         // Set up cube
         // Set up Textures
+        ResourceID song = rm_ctx.add_obj<Sound>("assets/sounds/ticktock.mp3");
+        rm_ctx.sound_load_obj(song);
+
+        AudioSource source = a_ctx.update_source((AudioSource){
+            .x=0.0f,
+            .y=0.0f,
+            .z=0.0f,
+            .gain=0.25f,
+            .pitch=1.0f,
+            .loop=AL_TRUE,
+        });
+
+        a_ctx.play_sound(source, *rm_ctx.get_obj<Sound>(song));
+
         ResourceID cube_tex_id = rm_ctx.add_obj<Texture>("assets/cube.png");
         rm_ctx.data[cube_tex_id] =
             std::static_pointer_cast<void>(

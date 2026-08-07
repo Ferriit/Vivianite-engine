@@ -154,7 +154,7 @@ namespace vivianite {
 
             bool tex_load_obj(ResourceID ID);
 
-            bool obj_load_sound(ResourceID ID);
+            bool sound_load_obj(ResourceID ID);
     };
 
     class Time {

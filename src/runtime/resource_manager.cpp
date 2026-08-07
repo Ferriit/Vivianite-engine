@@ -277,7 +277,7 @@ namespace vivianite {
         return true;
     }
 
-    bool ResourceManager::obj_load_sound(ResourceID ID) {
+    bool ResourceManager::sound_load_obj(ResourceID ID) {
         if (is_loaded(ID))
             return true;
 
