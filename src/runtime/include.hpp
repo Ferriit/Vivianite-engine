@@ -40,6 +40,10 @@
 #include "../external/dr_libs/dr_wav.h"
 #include "../external/dr_libs/dr_mp3.h"
 
+#include "../external/imgui/imgui.h"
+#include "../external/imgui/backends/imgui_impl_glfw.h"
+#include "../external/imgui/backends/imgui_impl_opengl3.h"
+
 #define VIVIANITE_VSYNC_TRUE 1
 #define VIVIANITE_VSYNC_FALSE 0
 #define VIVIANITE_VSYNC_HALF 2

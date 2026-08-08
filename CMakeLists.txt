@@ -116,7 +116,27 @@ target_include_directories(glm INTERFACE
 # OpenGL
 find_package(OpenGL REQUIRED)
 
-# OpenAL
+# IMGUI
+add_library(imgui STATIC
+    external/imgui/imgui.cpp
+    external/imgui/imgui_draw.cpp
+    external/imgui/imgui_tables.cpp
+    external/imgui/imgui_widgets.cpp
+
+    external/imgui/backends/imgui_impl_glfw.cpp
+    external/imgui/backends/imgui_impl_opengl3.cpp
+)
+
+target_include_directories(imgui PUBLIC
+    external/imgui
+    external/imgui/backends
+)
+
+target_link_libraries(imgui PUBLIC
+    glfw
+    OpenGL::GL
+)
+
 # OpenAL
 if(WIN32)
     add_library(OpenAL::OpenAL SHARED IMPORTED)
@@ -144,6 +164,7 @@ target_include_directories(Vivianite PRIVATE
 
 target_link_libraries(Vivianite PRIVATE
     glad
+    imgui
     glm
     glfw
     OpenGL::GL
