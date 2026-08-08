@@ -602,7 +602,6 @@ namespace vivianite {
     void renderer::render_update() {
         this->shutdown = glfwWindowShouldClose(this->window);
             
-
         this->time = glfwGetTime();
         this->delta_time = this->time - this->last;
         this->last = this->time;

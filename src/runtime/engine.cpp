@@ -280,6 +280,25 @@ namespace vivianite {
         r_ctx.camera_pos += up * static_cast<float>(r_ctx.delta_time) * 5.0f * i_ctx.get_axis("k_crouch");
         #endif
 
+        alListener3f(
+            AL_POSITION,
+            r_ctx.camera_pos.x,
+            r_ctx.camera_pos.y,
+            r_ctx.camera_pos.z
+        );
+
+        float orientation[] = {
+            forward.x,
+            forward.y,
+            forward.z,
+
+            up.x,
+            up.y,
+            up.z
+        };
+
+        alListenerfv(AL_ORIENTATION, orientation);
+
         if (i_ctx.get_action("exit")) {
             l_ctx.log(l_ctx.ERROR, "Shutdown: ESC pressed");
         }

@@ -5,6 +5,8 @@ namespace vivianite {
     bool Audio::initialize() {
         l_ctx->log(Logging::INFO, "Initializing Audio system");
 
+        alDistanceModel(AL_INVERSE_DISTANCE_CLAMPED);
+
         this->device = alcOpenDevice(nullptr);
 
         if (!this->device) {
@@ -49,22 +51,31 @@ namespace vivianite {
     }
 
     AudioSource Audio::update_source(AudioSource templ) {
-        alDeleteBuffers(1, &templ.source);
-
         ALuint source;
         alGenSources(1, &source);
 
         ALenum err = alGetError();
         if (err != AL_NO_ERROR) {
-            l_ctx->log(Logging::ERROR, "Unable to create source");
+            l_ctx->log(Logging::ERROR, "Unable to create source: {}", err);
+            return templ;
         }
 
         alSourcef(source, AL_GAIN, templ.gain);
         alSourcef(source, AL_PITCH, templ.pitch);
-        alSource3f(source, AL_POSITION, templ.x, templ.y, templ.z);
+
+        alSource3f(
+            source,
+            AL_POSITION,
+            templ.x,
+            templ.y,
+            templ.z
+        );
+
+        alSourcei(source, AL_SOURCE_RELATIVE, AL_FALSE);
         alSourcei(source, AL_LOOPING, templ.loop ? AL_TRUE : AL_FALSE);
 
         templ.source = source;
+
         return templ;
     }
 
