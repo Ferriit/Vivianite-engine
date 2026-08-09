@@ -34,8 +34,11 @@ glad: $(GLAD_FILES)
 $(GLAD_FILES):
 	@glad --api gl:core=$(GL_VERSION) --out-path external/glad c --loader
 
-run: runtime
-	./build/Vivianite
+run_runtime: runtime
+	./build/VivianiteRuntime
+
+run_editor: runtime
+	./build/VivianiteEditor
 
 debug: runtime_dbg
 	MESA_DEBUG=context gdb ./build/Vivianite

@@ -134,7 +134,8 @@ target_include_directories(glm INTERFACE
 # ------------------------------------------------------------
 
 find_package(OpenGL REQUIRED)
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GTKMM REQUIRED IMPORTED_TARGET gtkmm-4.0)
 
 # ------------------------------------------------------------
 # OpenAL
@@ -211,7 +212,7 @@ add_executable(VivianiteEditor
 
 target_link_libraries(VivianiteEditor PRIVATE
     VivianiteEngine
-    Qt6::Widgets
+    PkgConfig::GTKMM
 )
 
 # ------------------------------------------------------------
