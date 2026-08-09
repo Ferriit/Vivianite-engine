@@ -7,13 +7,14 @@ pkgs.mkShell {
     pkgs.pkg-config
     pkgs.gcc
     pkgs.gdb
-  
+
     pkgs.libffi
     pkgs.libGL
     pkgs.openal
+    pkgs.gtkmm4
 
     pkgs.mesa-demos
-  
+
     pkgs.xorg.libX11
     pkgs.xorg.libXrandr
     pkgs.xorg.libXinerama
@@ -22,7 +23,7 @@ pkgs.mkShell {
     pkgs.xorg.libXxf86vm
     pkgs.xorg.libXext
     pkgs.xorg.libXrender
-  
+
     pkgs.wayland
     pkgs.wayland-scanner
     pkgs.libxkbcommon
