@@ -16,13 +16,15 @@ if(ENABLE_LTO)
     endif()
 endif()
 
-# Disable GLFW extras
+# ------------------------------------------------------------
+# GLFW
+# ------------------------------------------------------------
+
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 
-# Check GLFW Linux dependencies
 if(UNIX AND NOT APPLE)
     set(GLFW_MISSING_DEPENDENCIES "")
 
@@ -43,6 +45,7 @@ if(UNIX AND NOT APPLE)
     include(CheckLibraryExists)
 
     check_library_exists(GL GLX "" HAVE_OPENGL)
+
     if(NOT X11_FOUND)
         list(APPEND GLFW_MISSING_DEPENDENCIES "libx11-dev")
     endif()
@@ -82,23 +85,33 @@ if(UNIX AND NOT APPLE)
 
         message(STATUS "")
         message(STATUS "Ubuntu/Debian install command:")
-        string(REPLACE ";" " " GLFW_INSTALL_COMMAND "${GLFW_MISSING_DEPENDENCIES}")
 
-        message(STATUS "  sudo apt install ${GLFW_INSTALL_COMMAND}")
+        string(
+            REPLACE ";"
+            " "
+            GLFW_INSTALL_COMMAND
+            "${GLFW_MISSING_DEPENDENCIES}"
+        )
 
-        message(FATAL_ERROR "Install missing dependencies and rerun CMake.")
+        message(
+            STATUS
+            "  sudo apt install ${GLFW_INSTALL_COMMAND}"
+        )
+
+        message(
+            FATAL_ERROR
+            "Install missing dependencies and rerun CMake."
+        )
     endif()
 endif()
 
-# Build GLFW from submodule/source
 add_subdirectory(external/glfw)
 
-file(GLOB_RECURSE SOURCES
-    src/runtime/*.cpp
-)
-
+# ------------------------------------------------------------
 # GLAD
-add_library(glad
+# ------------------------------------------------------------
+
+add_library(glad STATIC
     external/glad/src/gl.c
 )
 
@@ -106,107 +119,176 @@ target_include_directories(glad PUBLIC
     external/glad/include
 )
 
-# GLM (header-only)
+# ------------------------------------------------------------
+# GLM
+# ------------------------------------------------------------
+
 add_library(glm INTERFACE)
 
 target_include_directories(glm INTERFACE
     external/glm
 )
 
+# ------------------------------------------------------------
 # OpenGL
+# ------------------------------------------------------------
+
 find_package(OpenGL REQUIRED)
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
-# IMGUI
-add_library(imgui STATIC
-    external/imgui/imgui.cpp
-    external/imgui/imgui_draw.cpp
-    external/imgui/imgui_tables.cpp
-    external/imgui/imgui_widgets.cpp
-
-    external/imgui/backends/imgui_impl_glfw.cpp
-    external/imgui/backends/imgui_impl_opengl3.cpp
-)
-
-target_include_directories(imgui PUBLIC
-    external/imgui
-    external/imgui/backends
-)
-
-target_link_libraries(imgui PUBLIC
-    glfw
-    OpenGL::GL
-)
-
+# ------------------------------------------------------------
 # OpenAL
+# ------------------------------------------------------------
+
 if(WIN32)
+
     add_library(OpenAL::OpenAL SHARED IMPORTED)
 
     set_target_properties(OpenAL::OpenAL PROPERTIES
         IMPORTED_IMPLIB
             "${CMAKE_SOURCE_DIR}/external/openal/libOpenAL32.a"
+
         IMPORTED_LOCATION
             "${CMAKE_SOURCE_DIR}/external/openal/OpenAL32.dll"
+
         INTERFACE_INCLUDE_DIRECTORIES
             "${CMAKE_SOURCE_DIR}/external/openal/include"
     )
+
 else()
+
     find_package(OpenAL REQUIRED)
+
 endif()
 
-# Executable
-add_executable(Vivianite
-    ${SOURCES}
+# ------------------------------------------------------------
+# Shared engine
+# ------------------------------------------------------------
+
+file(GLOB_RECURSE ENGINE_SOURCES
+    src/runtime/*.cpp
 )
 
-target_include_directories(Vivianite PRIVATE
+list(REMOVE_ITEM ENGINE_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/runtime/main.cpp"
+)
+
+add_library(VivianiteEngine STATIC
+    ${ENGINE_SOURCES}
+)
+
+target_include_directories(VivianiteEngine PUBLIC
     src
 )
 
-target_link_libraries(Vivianite PRIVATE
+target_link_libraries(VivianiteEngine PUBLIC
     glad
-    imgui
     glm
     glfw
     OpenGL::GL
     OpenAL::OpenAL
 )
 
-if(WIN32)
-    add_custom_command(TARGET Vivianite POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        "${CMAKE_SOURCE_DIR}/external/openal/OpenAL32.dll"
-        "$<TARGET_FILE_DIR:Vivianite>"
-    )
-endif()
+# ------------------------------------------------------------
+# Runtime
+# ------------------------------------------------------------
 
-# Copy DLL beside executable on Windows
-if(WIN32)
-    add_custom_command(TARGET Vivianite POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        "${CMAKE_SOURCE_DIR}/external/openal/OpenAL32.dll"
-        "$<TARGET_FILE_DIR:Vivianite>"
-    )
-endif()
+add_executable(VivianiteRuntime
+    src/runtime/engine.cpp
+)
+
+target_link_libraries(VivianiteRuntime PRIVATE
+    VivianiteEngine
+)
+
+# ------------------------------------------------------------
+# Editor
+# ------------------------------------------------------------
+
+add_executable(VivianiteEditor
+    src/editor/main.cpp
+)
+
+target_link_libraries(VivianiteEditor PRIVATE
+    VivianiteEngine
+    Qt6::Widgets
+)
+
+# ------------------------------------------------------------
+# Compiler options
+# ------------------------------------------------------------
 
 if(MSVC)
-    target_compile_options(Vivianite PRIVATE
-        /W4
-    )
+
+    target_compile_options(VivianiteEngine PRIVATE /W4)
+    target_compile_options(VivianiteRuntime PRIVATE /W4)
+    target_compile_options(VivianiteEditor PRIVATE /W4)
+
 else()
-    target_compile_options(Vivianite PRIVATE
+
+    target_compile_options(VivianiteEngine PRIVATE
+        -Wall
+        -Wextra
+    )
+
+    target_compile_options(VivianiteRuntime PRIVATE
+        -Wall
+        -Wextra
+    )
+
+    target_compile_options(VivianiteEditor PRIVATE
         -Wall
         -Wextra
     )
 
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        target_compile_options(Vivianite PRIVATE
+
+        target_compile_options(VivianiteEngine PRIVATE
             -O0
             -g
             -DDBG
         )
+
+        target_compile_options(VivianiteRuntime PRIVATE
+            -O0
+            -g
+            -DDBG
+        )
+
+        target_compile_options(VivianiteEditor PRIVATE
+            -O0
+            -g
+            -DDBG
+        )
+
     elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-        target_compile_options(Vivianite PRIVATE
+
+        target_compile_options(VivianiteEngine PRIVATE
             -O3
         )
+
+        target_compile_options(VivianiteRuntime PRIVATE
+            -O3
+        )
+
+        target_compile_options(VivianiteEditor PRIVATE
+            -O3
+        )
+
     endif()
+
+endif()
+
+# ------------------------------------------------------------
+# Windows DLL
+# ------------------------------------------------------------
+
+if(WIN32)
+
+    add_custom_command(TARGET VivianiteRuntime POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        "${CMAKE_SOURCE_DIR}/external/openal/OpenAL32.dll"
+        "$<TARGET_FILE_DIR:VivianiteRuntime>"
+    )
+
 endif()
