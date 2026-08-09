@@ -4,11 +4,11 @@ GL_VERSION := 4.6
 
 default: runtime
 
-runtime: glad clean_bin
+runtime: glad clean
 	cmake -B build -G Ninja
 	cmake --build build
 
-runtime_dbg: glad clean_bin
+runtime_dbg: glad clean
 	cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
 	cmake --build build
 
@@ -41,9 +41,9 @@ debug: runtime_dbg
 	MESA_DEBUG=context gdb ./build/Vivianite
 
 clean_bin:
-	rm -f build/Vivianite
-	rm -f build/Debug/Vivianite
-	rm -f build/Release/Vivianite
+	rm -f build/Vivianite*
+	rm -f build/Debug/Vivianite*
+	rm -f build/Release/Vivianite*
 
 clean:
 	rm -rf build/ build-windows/ dist/
