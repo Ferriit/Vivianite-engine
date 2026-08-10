@@ -8,6 +8,8 @@ class MainWindow : public Gtk::Window {
         Gtk::TextView console_view;
         Glib::RefPtr<Gtk::TextBuffer> console_buffer;
 
+        Gtk::Button build_button{"Build"};
+
         MainWindow() {
             set_title("Vivianite Editor");
             set_default_size(1280, 720);
@@ -42,6 +44,7 @@ class MainWindow : public Gtk::Window {
             auto *console_container = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
             auto *browser_container = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
 
+            // Set up console
             this->console_buffer = Gtk::TextBuffer::create();
             this->console_view.set_buffer(this->console_buffer);
             this->console_view.set_editable(false);
@@ -50,6 +53,17 @@ class MainWindow : public Gtk::Window {
             this->console_view.set_vexpand(true);
             this->console_view.set_hexpand(true);
             
+            // Set up Editor
+            editor_container->append(build_button);
+            this->build_button.signal_clicked().connect(
+                sigc::bind(
+                    sigc::mem_fun(*this, &MainWindow::run_console),
+                    "./build/VivianiteRuntime"
+                )
+            );
+            build_button.set_hexpand(false);
+            build_button.set_halign(Gtk::Align::START);
+
             console_scroll.set_child(*console_container);
             console_scroll.set_vexpand(true);
             console_scroll.set_hexpand(true);
@@ -72,8 +86,6 @@ class MainWindow : public Gtk::Window {
 
             main_paned->set_position(620);
 
-            run_console();
-
             set_child(*main_paned);
         }
 
@@ -81,13 +93,14 @@ class MainWindow : public Gtk::Window {
             if (text.empty())
                 return;
 
-            auto iter = this->console_buffer->end();
-            this->console_buffer->insert(iter, text);
-            this->console_view.scroll_to(iter);
+            console_buffer->insert(console_buffer->end(), text);
+
+            auto end = console_buffer->end();
+            console_view.scroll_to(end);
         }
 
-        void run_console() {
-            Process process = process_create("./build/VivianiteRuntime");
+        void run_console(const std::string command) {
+            Process process = process_create(command);
 
             std::thread([this, process = std::move(process)]() mutable {
                 std::string chunk;
