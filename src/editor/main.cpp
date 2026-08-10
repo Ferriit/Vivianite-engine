@@ -1,7 +1,13 @@
 #include <gtkmm.h>
+#include <thread>
+#include <string>
+#include "process.hpp"
 
 class MainWindow : public Gtk::Window {
     public:
+        Gtk::TextView console_view;
+        Glib::RefPtr<Gtk::TextBuffer> console_buffer;
+
         MainWindow() {
             set_title("Vivianite Editor");
             set_default_size(1280, 720);
@@ -30,9 +36,23 @@ class MainWindow : public Gtk::Window {
 
             auto *main_paned = Gtk::make_managed<Gtk::Paned>(Gtk::Orientation::VERTICAL);
 
+            Gtk::ScrolledWindow console_scroll;
+
             auto *editor_container = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
             auto *console_container = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
             auto *browser_container = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
+
+            this->console_buffer = Gtk::TextBuffer::create();
+            this->console_view.set_buffer(this->console_buffer);
+            this->console_view.set_editable(false);
+            this->console_view.set_cursor_visible(false);
+            this->console_view.set_wrap_mode(Gtk::WrapMode::WORD_CHAR);
+            this->console_view.set_vexpand(true);
+            this->console_view.set_hexpand(true);
+            
+            console_scroll.set_child(*console_container);
+            console_scroll.set_vexpand(true);
+            console_scroll.set_hexpand(true);
 
             editor_container->add_css_class("panel");
             console_container->add_css_class("panel");
@@ -44,14 +64,52 @@ class MainWindow : public Gtk::Window {
 
             editor_container->append(*editor_label);
             console_container->append(*console_label);
+            console_container->append(this->console_view);
             browser_container->append(*browser_label);
 
             main_paned->set_start_child(*editor_container);
-            main_paned->set_end_child(*console_container);
+            main_paned->set_end_child(console_scroll);
 
             main_paned->set_position(620);
 
+            run_console();
+
             set_child(*main_paned);
+        }
+
+        void append_console_text(const std::string& text) {
+            if (text.empty())
+                return;
+
+            auto iter = this->console_buffer->end();
+            this->console_buffer->insert(iter, text);
+            this->console_view.scroll_to(iter);
+        }
+
+        void run_console() {
+            Process process = process_create("./build/VivianiteRuntime");
+
+            std::thread([this, process = std::move(process)]() mutable {
+                std::string chunk;
+
+                while (process_read_chunk(process, chunk)) {
+                    if (!chunk.empty()) {
+                        Glib::MainContext::get_default()->invoke(
+                            [this, text = std::move(chunk)]() mutable {
+                                this->append_console_text(text);
+                                return false;
+                            }
+                        );
+                    }
+                }
+
+                Glib::MainContext::get_default()->invoke(
+                    [this]() {
+                        this->append_console_text("\n[process exited]\n");
+                        return false;
+                    }
+                );
+            }).detach();
         }
 };
 

@@ -4,7 +4,7 @@ GL_VERSION := 4.6
 
 default: runtime
 
-runtime: glad clean
+runtime: glad
 	cmake -B build -G Ninja
 	cmake --build build
 
