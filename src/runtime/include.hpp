@@ -104,6 +104,12 @@ namespace vivianite {
         ALuint source;
     };
 
+    using Entity = uint64_t;
+    struct Module {
+        void* instance;
+        std::type_index type;
+    };
+
     using ResourceID = uint64_t;
 
     class ResourceManager {
@@ -155,6 +161,19 @@ namespace vivianite {
             bool tex_load_obj(ResourceID ID);
 
             bool sound_load_obj(ResourceID ID);
+    };
+
+    class ECS {
+        private:
+            void* l_ctx = nullptr;
+            std::vector<Entity> entities{};
+            std::unordered_map<Entity, std::vector<Module>> modules{};
+
+        public:
+            ECS();
+
+            template<typename T>
+            void add_module(Entity entity);
     };
 
     class Time {

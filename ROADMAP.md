@@ -4,7 +4,7 @@
 [~] Basic renderer subsystem
 [~] Scheduler subsystem
 [x] Input subsystem
-[ ] Audio subsystem
+[~] Audio subsystem
 [~] Resource Manager subsystem
 [ ] Serializer
 [ ] Scene subsystem

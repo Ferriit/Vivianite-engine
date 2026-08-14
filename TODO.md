@@ -101,8 +101,8 @@
     - [ ] Asset importing
 
 ## ECS / Modules
-- [ ] ECS / Module system
-    - [ ] Base entity
+- [~] ECS / Module system
+    - [~] Base entity
     - [ ] Modules that inherit the base entity
         - [ ] Transform Module
         - [ ] Rigidbody Module
