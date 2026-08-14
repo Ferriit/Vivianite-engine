@@ -47,293 +47,6 @@
 #define MAX_LIGHTS_PER_TILE 64
 
 namespace vivianite {
-    struct shader {
-        std::string frag_path, vert_path;
-        std::string frag_raw, vert_raw;
-        GLuint frag, vert, program;
-    };
-
-    struct Texture {
-        GLenum wraping; // GL_REPEAT, GL_MIRRORED_REPEAT, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_BORDER
-        GLenum min_filtering; // GL_NEAREST, GL_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR
-        GLenum mag_filtering; // GL_NEAREST, GL_LINEAR
-        GLint texture;
-    };
-
-    // TODO: Add a material format
-    struct alignas(16) material {
-        std::shared_ptr<Texture> albedo;
-        float shininess;
-        float specular_strength;
-    };
-
-    struct alignas(16) mesh {
-        std::vector<float> vertices;
-        GLuint vao;
-        size_t vertex_count;
-    };
-
-    struct alignas(16) model {
-        mesh obj;
-        glm::vec3 position;
-        glm::vec3 rotation;
-        material mat;
-    };
-
-    struct alignas(16) light {
-        glm::vec4 position;
-        glm::vec4 color;
-        float radius, strength;
-        float linear;
-        float quadratic;
-    };
-
-    struct tile {
-        uint32_t count;
-        uint32_t offset;
-    };
-
-    using Sound = ALuint;
-
-    struct AudioSource {
-        float x, y, z;
-
-        float gain, pitch;
-        bool loop;
-
-        ALuint source;
-    };
-
-    using Entity = uint64_t;
-    struct Module {
-        void* instance;
-        std::type_index type;
-    };
-
-    using ResourceID = uint64_t;
-
-    class ResourceManager {
-        private:
-            std::vector<std::tuple<bool, std::shared_ptr<void>, std::string>> objects;
-
-        public:
-            std::vector<std::shared_ptr<void>> data;
-
-            template<typename T>
-            void set_obj(ResourceID ID, std::string path) {
-                objects[ID] = {
-                    false,
-                    nullptr,
-                    path
-                };
-            }
-
-            template<typename T>
-            ResourceID add_obj(std::string path) {
-                objects.push_back({
-                    false,
-                    nullptr,
-                    path
-                });
-                data.resize(data.size() + 1);
-                return objects.size() - 1;
-            }
-
-            bool is_loaded(ResourceID ID) {
-                if (ID >= objects.size())
-                    return false;
-
-                auto [loaded, obj, path] = objects[ID];
-                return loaded;
-            }
-
-            template<typename T>
-            std::shared_ptr<T> get_obj(ResourceID ID) {
-                if (ID >= objects.size())
-                    return nullptr;
-
-                auto [loaded, obj, path] = objects[ID];
-                return static_pointer_cast<T>(obj);
-            }
-
-            bool obj_load_obj(ResourceID ID);
-
-            bool tex_load_obj(ResourceID ID);
-
-            bool sound_load_obj(ResourceID ID);
-    };
-
-    class ECS {
-        private:
-            void* l_ctx = nullptr;
-            std::vector<Entity> entities{};
-            std::unordered_map<Entity, std::vector<Module>> modules{};
-
-        public:
-            ECS();
-
-            template<typename T>
-            void add_module(Entity entity);
-    };
-
-    class Time {
-    public:
-        using timestamp = long long;
-
-        struct date {
-            int year;
-            int month;
-            int day;
-        };
-
-        struct clock {
-            int hour;
-            int min;
-            int sec;
-        };
-
-        struct date_time {
-            int year;
-            int month;
-            int day;
-            int hour;
-            int min;
-            int sec;
-            int millisec;
-        };
-
-        float delta_time = 0.0f;
-
-        timestamp get_time();
-
-        date get_date_utc();
-
-        clock get_clock_utc();
-
-        date_time get_date_time_utc();
-
-        timestamp get_timezone_offset();
-
-        date utc_to_date(timestamp ts);
-
-        clock utc_to_clock(timestamp ts);
-
-        date_time utc_to_date_time(timestamp ts);
-
-        timestamp date_to_utc(date d);
-
-        timestamp clock_to_utc(clock c);
-
-        timestamp date_time_to_utc(date_time dt);
-    };
-
-    class Logging {
-        public:
-        enum log_level {
-            INFO,
-            WARNING,
-            ERROR,
-            FATAL,
-            NOTICE,
-            DEBUG,
-            UNMARKED,
-        };
-
-        struct log_entry {
-            log_level level;
-            Time::date_time timestamp;
-            std::string message;
-        };
-
-        bool verbose;
-
-        Logging(bool colored = true)
-            : colored(colored) {}
-
-        template <typename... Args>
-        void log(log_level level, std::format_string<Args...> format, Args&&... args) {
-            if (level == log_level::DEBUG && !verbose) return;
-
-            auto dt_UTC = Time().get_time();
-            auto dt = Time().utc_to_date_time(dt_UTC);
-            std::string message = std::format(format, std::forward<Args>(args)...);
-
-            buffer.push_back({level, dt, message});
-            if (buffer.size() > max_buffer_size)
-                buffer.pop_front();
-
-            static constexpr std::array<std::pair<std::string_view, std::string_view>, 7> level_info = {{
-                {"INFO",   "\x1b[32m"},
-                {"WARN",   "\x1b[38;5;214m"},
-                {"ERROR",  "\x1b[31;1m"},
-                {"FATAL",  "\x1b[31;40m"},
-                {"NOTICE", "\x1b[34;1m"},
-                {"DEBUG",  "\x1b[38;5;242m"},
-                {"",       "\x1b[0m"},
-            }};
-            const auto& [label, color] = level_info[std::to_underlying(level)];
-
-            if (colored) std::cout << color;
-            if (!label.empty()) std::cout << "[" << label << "] ";
-            std::cout << std::format("[{:04}-{:02}-{:02} {:02}:{:02}:{:02}] ",
-                                      dt.year, dt.month, dt.day, dt.hour, dt.min, dt.sec);
-            if (colored) std::cout << "\x1b[0m";
-            std::cout << message << "\n" << std::flush;
-        }
-
-        void clear() { buffer.clear(); }
-
-    private:
-        std::deque<log_entry> buffer;
-        std::size_t max_buffer_size;
-        bool colored;
-    };
-
-    namespace Scheduler {
-        struct Task {
-            enum TASK_TYPE {
-                ASAP,
-                ONCE,
-                ABS,
-                INTERVAL,
-                EVERY_FRAME
-            };
-
-            TASK_TYPE run_type;
-
-            Time::timestamp next_run;
-            Time::timestamp interval;
-            Time::timestamp delay;
-            bool multi_threaded = false;
-
-            // ENGINE REFERENCE ↓
-            std::function<void()> callback;
-
-            void* e_ctx;
-            void* r_ctx;
-            
-            void execute();
-        };
-
-        class Scheduler {
-            private:
-                std::vector<Task> tasks;
-            
-            public:
-                void* r_ctx; // Renderer Reference
-
-                Logging* l_ctx = nullptr;
-
-                bool running = true;
-
-                void add_task(Task tsk);
-
-                void main_loop();
-
-                void thread_loop();
-        };
-    };
-
     enum KeyType {
         // Letters
         K_a, K_b, K_c, K_d, K_e, K_f, K_g,
@@ -526,6 +239,294 @@ namespace vivianite {
 
         bool time_scaled = false;
     };
+
+    struct date {
+        int year;
+        int month;
+        int day;
+    };
+
+    struct clock {
+        int hour;
+        int min;
+        int sec;
+    };
+
+    struct date_time {
+        int year;
+        int month;
+        int day;
+        int hour;
+        int min;
+        int sec;
+        int millisec;
+    };
+    using timestamp = long long;
+
+    struct shader {
+        std::string frag_path, vert_path;
+        std::string frag_raw, vert_raw;
+        GLuint frag, vert, program;
+    };
+
+    struct Texture {
+        GLenum wraping; // GL_REPEAT, GL_MIRRORED_REPEAT, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_BORDER
+        GLenum min_filtering; // GL_NEAREST, GL_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR
+        GLenum mag_filtering; // GL_NEAREST, GL_LINEAR
+        GLint texture;
+    };
+
+    // TODO: Add a material format
+    struct alignas(16) material {
+        std::shared_ptr<Texture> albedo;
+        float shininess;
+        float specular_strength;
+    };
+
+    struct alignas(16) mesh {
+        std::vector<float> vertices;
+        GLuint vao;
+        size_t vertex_count;
+    };
+
+    struct alignas(16) model {
+        mesh obj;
+        glm::vec3 position;
+        glm::vec3 rotation;
+        material mat;
+    };
+
+    struct alignas(16) light {
+        glm::vec4 position;
+        glm::vec4 color;
+        float radius, strength;
+        float linear;
+        float quadratic;
+    };
+
+    struct tile {
+        uint32_t count;
+        uint32_t offset;
+    };
+
+    using Sound = ALuint;
+
+    struct AudioSource {
+        float x, y, z;
+
+        float gain, pitch;
+        bool loop;
+
+        ALuint source;
+    };
+
+    using Entity = uint64_t;
+    struct Module {
+        void* instance;
+        std::type_index type;
+    };
+
+    using ResourceID = uint64_t;
+
+    class ResourceManager {
+        private:
+            std::vector<std::tuple<bool, std::shared_ptr<void>, std::string>> objects;
+
+        public:
+            std::vector<std::shared_ptr<void>> data;
+
+            template<typename T>
+            void set_obj(ResourceID ID, std::string path) {
+                objects[ID] = {
+                    false,
+                    nullptr,
+                    path
+                };
+            }
+
+            template<typename T>
+            ResourceID add_obj(std::string path) {
+                objects.push_back({
+                    false,
+                    nullptr,
+                    path
+                });
+                data.resize(data.size() + 1);
+                return objects.size() - 1;
+            }
+
+            bool is_loaded(ResourceID ID) {
+                if (ID >= objects.size())
+                    return false;
+
+                auto [loaded, obj, path] = objects[ID];
+                return loaded;
+            }
+
+            template<typename T>
+            std::shared_ptr<T> get_obj(ResourceID ID) {
+                if (ID >= objects.size())
+                    return nullptr;
+
+                auto [loaded, obj, path] = objects[ID];
+                return static_pointer_cast<T>(obj);
+            }
+
+            bool obj_load_obj(ResourceID ID);
+
+            bool tex_load_obj(ResourceID ID);
+
+            bool sound_load_obj(ResourceID ID);
+    };
+
+    class ECS {
+        private:
+            void* l_ctx = nullptr;
+            std::vector<Entity> entities{};
+            std::unordered_map<Entity, std::vector<Module>> modules{};
+
+        public:
+            template<typename T>
+            void add_module(Entity entity, T* module);
+
+            template<typename T>
+            T* get_module(Entity entity);
+    };
+
+    class Time {
+    public:
+        float delta_time = 0.0f;
+
+        timestamp get_time();
+
+        date get_date_utc();
+
+        clock get_clock_utc();
+
+        date_time get_date_time_utc();
+
+        timestamp get_timezone_offset();
+
+        date utc_to_date(timestamp ts);
+
+        clock utc_to_clock(timestamp ts);
+
+        date_time utc_to_date_time(timestamp ts);
+
+        timestamp date_to_utc(date d);
+
+        timestamp clock_to_utc(clock c);
+
+        timestamp date_time_to_utc(date_time dt);
+    };
+
+    class Logging {
+        public:
+        enum log_level {
+            INFO,
+            WARNING,
+            ERROR,
+            FATAL,
+            NOTICE,
+            DEBUG,
+            UNMARKED,
+        };
+
+        struct log_entry {
+            log_level level;
+            date_time timestamp;
+            std::string message;
+        };
+
+        bool verbose;
+
+        Logging(bool colored = true)
+            : colored(colored) {}
+
+        template <typename... Args>
+        void log(log_level level, std::format_string<Args...> format, Args&&... args) {
+            if (level == log_level::DEBUG && !verbose) return;
+
+            auto dt_UTC = Time().get_time();
+            auto dt = Time().utc_to_date_time(dt_UTC);
+            std::string message = std::format(format, std::forward<Args>(args)...);
+
+            buffer.push_back({level, dt, message});
+            if (buffer.size() > max_buffer_size)
+                buffer.pop_front();
+
+            static constexpr std::array<std::pair<std::string_view, std::string_view>, 7> level_info = {{
+                {"INFO",   "\x1b[32m"},
+                {"WARN",   "\x1b[38;5;214m"},
+                {"ERROR",  "\x1b[31;1m"},
+                {"FATAL",  "\x1b[31;40m"},
+                {"NOTICE", "\x1b[34;1m"},
+                {"DEBUG",  "\x1b[38;5;242m"},
+                {"",       "\x1b[0m"},
+            }};
+            const auto& [label, color] = level_info[std::to_underlying(level)];
+
+            if (colored) std::cout << color;
+            if (!label.empty()) std::cout << "[" << label << "] ";
+            std::cout << std::format("[{:04}-{:02}-{:02} {:02}:{:02}:{:02}] ",
+                                      dt.year, dt.month, dt.day, dt.hour, dt.min, dt.sec);
+            if (colored) std::cout << "\x1b[0m";
+            std::cout << message << "\n" << std::flush;
+        }
+
+        void clear() { buffer.clear(); }
+
+    private:
+        std::deque<log_entry> buffer;
+        std::size_t max_buffer_size;
+        bool colored;
+    };
+
+    namespace Scheduler {
+        struct Task {
+            enum TASK_TYPE {
+                ASAP,
+                ONCE,
+                ABS,
+                INTERVAL,
+                EVERY_FRAME
+            };
+
+            TASK_TYPE run_type;
+
+            timestamp next_run;
+            timestamp interval;
+            timestamp delay;
+            bool multi_threaded = false;
+
+            // ENGINE REFERENCE ↓
+            std::function<void()> callback;
+
+            void* e_ctx;
+            void* r_ctx;
+            
+            void execute();
+        };
+
+        class Scheduler {
+            private:
+                std::vector<Task> tasks;
+            
+            public:
+                void* r_ctx; // Renderer Reference
+
+                Logging* l_ctx = nullptr;
+
+                bool running = true;
+
+                void add_task(Task tsk);
+
+                void main_loop();
+
+                void thread_loop();
+        };
+    };
+
 
     class Input {
         private:
@@ -728,3 +729,5 @@ namespace vivianite {
             void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
     };
 }
+
+#include "modules.hpp"

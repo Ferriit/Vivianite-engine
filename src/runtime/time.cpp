@@ -1,7 +1,7 @@
 #include "include.hpp"
 
 namespace vivianite {
-    Time::timestamp Time::get_time() {
+    timestamp Time::get_time() {
         auto now = std::chrono::system_clock::now();
 
         return std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -9,7 +9,7 @@ namespace vivianite {
         ).count();
     }
 
-    Time::date Time::get_date_utc() {
+    date Time::get_date_utc() {
         auto now = std::chrono::system_clock::now();
         std::time_t t = std::chrono::system_clock::to_time_t(now);
 
@@ -22,7 +22,7 @@ namespace vivianite {
         };
     }
 
-    Time::clock Time::get_clock_utc() {
+    clock Time::get_clock_utc() {
         auto now = std::chrono::system_clock::now();
         std::time_t t = std::chrono::system_clock::to_time_t(now);
 
@@ -35,7 +35,7 @@ namespace vivianite {
         };
     }
 
-    Time::date_time Time::get_date_time_utc() {
+    date_time Time::get_date_time_utc() {
         auto now = std::chrono::system_clock::now();
 
         auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -56,7 +56,7 @@ namespace vivianite {
         };
     }
 
-    Time::timestamp Time::get_timezone_offset() {
+    timestamp Time::get_timezone_offset() {
         std::time_t now = std::time(nullptr);
 
         std::tm local = *std::localtime(&now);
@@ -70,7 +70,7 @@ namespace vivianite {
     }
 
     // utc timestamp -> local date
-    Time::date Time::utc_to_date(timestamp ts) {
+    date Time::utc_to_date(timestamp ts) {
         ts += get_timezone_offset() * 1000;
 
         std::time_t time = ts / 1000;
@@ -85,7 +85,7 @@ namespace vivianite {
 
 
     // utc timestamp -> local clock
-    Time::clock Time::utc_to_clock(timestamp ts) {
+    clock Time::utc_to_clock(timestamp ts) {
         ts += get_timezone_offset() * 1000;
 
         std::time_t time = ts / 1000;
@@ -100,7 +100,7 @@ namespace vivianite {
 
 
     // utc timestamp -> local date_time
-    Time::date_time Time::utc_to_date_time(timestamp ts) {
+    date_time Time::utc_to_date_time(timestamp ts) {
         std::time_t time = ts / 1000;
 
         std::tm result = *std::localtime(&time);
@@ -118,7 +118,7 @@ namespace vivianite {
 
 
     // local date -> utc timestamp
-    Time::timestamp Time::date_to_utc(date d) {
+    timestamp Time::date_to_utc(date d) {
         std::tm tm = {};
         tm.tm_year = d.year - 1900;
         tm.tm_mon = d.month - 1;
@@ -131,7 +131,7 @@ namespace vivianite {
 
 
     // local clock -> utc timestamp
-    Time::timestamp Time::clock_to_utc(clock c) {
+    timestamp Time::clock_to_utc(clock c) {
         std::tm tm = {};
         tm.tm_hour = c.hour;
         tm.tm_min = c.min;
@@ -144,7 +144,7 @@ namespace vivianite {
 
 
     // local date_time -> utc timestamp
-    Time::timestamp Time::date_time_to_utc(date_time dt) {
+    timestamp Time::date_time_to_utc(date_time dt) {
         std::tm tm = {};
 
         tm.tm_year = dt.year - 1900;

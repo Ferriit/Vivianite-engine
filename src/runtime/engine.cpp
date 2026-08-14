@@ -1,8 +1,8 @@
 #include "include.hpp"
 #define PI 3.14159265f
 
-vivianite::Time::timestamp elapsed_time = 0;
-vivianite::Time::timestamp start_time = 0;
+vivianite::timestamp elapsed_time = 0;
+vivianite::timestamp start_time = 0;
 
 int frame_count = 0;
 

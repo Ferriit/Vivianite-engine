@@ -40,7 +40,7 @@ namespace vivianite {
                     if (tsk.multi_threaded)
                         continue;
 
-                    Time::timestamp now = Time().get_time();
+                    timestamp now = Time().get_time();
 
                     if ((now >= tsk.next_run) && (tsk.next_run != -1)) {
                         if (tsk.run_type == Task::EVERY_FRAME) {
@@ -69,7 +69,7 @@ namespace vivianite {
                     if (!tsk.multi_threaded)
                         continue;
 
-                    Time::timestamp now = Time().get_time();
+                    timestamp now = Time().get_time();
 
                     if ((now >= tsk.next_run) && (tsk.next_run != -1)) {
                         if (tsk.run_type == Task::EVERY_FRAME) {
