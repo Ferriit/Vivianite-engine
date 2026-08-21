@@ -7,18 +7,43 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(ENABLE_LTO "Enable link-time optimization" OFF)
 
+# ============================================================
+# Platform
+# ============================================================
+
+if(WIN32)
+    message(STATUS "Configuring Vivianite for Windows")
+elseif(UNIX AND NOT APPLE)
+    message(STATUS "Configuring Vivianite for Linux")
+elseif(APPLE)
+    message(FATAL_ERROR "macOS is not currently supported")
+else()
+    message(FATAL_ERROR "Unsupported platform")
+endif()
+
+# ============================================================
+# LTO
+# ============================================================
+
 if(ENABLE_LTO)
     include(CheckIPOSupported)
-    check_ipo_supported(RESULT LTO_SUPPORTED)
+
+    check_ipo_supported(
+        RESULT LTO_SUPPORTED
+        OUTPUT LTO_ERROR
+    )
 
     if(LTO_SUPPORTED)
+        message(STATUS "LTO: enabled")
         set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+    else()
+        message(WARNING "LTO is not supported: ${LTO_ERROR}")
     endif()
 endif()
 
-# ------------------------------------------------------------
+# ============================================================
 # GLFW
-# ------------------------------------------------------------
+# ============================================================
 
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -26,13 +51,17 @@ set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 
 if(UNIX AND NOT APPLE)
+
     set(GLFW_MISSING_DEPENDENCIES "")
 
     find_package(PkgConfig QUIET)
 
     if(NOT PKG_CONFIG_FOUND)
+
         list(APPEND GLFW_MISSING_DEPENDENCIES "pkg-config")
+
     else()
+
         pkg_check_modules(X11 x11)
         pkg_check_modules(XRANDR xrandr)
         pkg_check_modules(XINERAMA xinerama)
@@ -40,6 +69,7 @@ if(UNIX AND NOT APPLE)
         pkg_check_modules(XI xi)
         pkg_check_modules(WAYLAND wayland-client)
         pkg_check_modules(XKBCOMMON xkbcommon)
+
     endif()
 
     include(CheckLibraryExists)
@@ -75,6 +105,7 @@ if(UNIX AND NOT APPLE)
     endif()
 
     if(GLFW_MISSING_DEPENDENCIES)
+
         message(STATUS "")
         message(STATUS "Missing GLFW build dependencies:")
         message(STATUS "--------------------------------")
@@ -102,14 +133,16 @@ if(UNIX AND NOT APPLE)
             FATAL_ERROR
             "Install missing dependencies and rerun CMake."
         )
+
     endif()
+
 endif()
 
 add_subdirectory(external/glfw)
 
-# ------------------------------------------------------------
+# ============================================================
 # GLAD
-# ------------------------------------------------------------
+# ============================================================
 
 add_library(glad STATIC
     external/glad/src/gl.c
@@ -119,9 +152,9 @@ target_include_directories(glad PUBLIC
     external/glad/include
 )
 
-# ------------------------------------------------------------
+# ============================================================
 # GLM
-# ------------------------------------------------------------
+# ============================================================
 
 add_library(glm INTERFACE)
 
@@ -129,23 +162,66 @@ target_include_directories(glm INTERFACE
     external/glm
 )
 
-# ------------------------------------------------------------
+# ============================================================
 # OpenGL
-# ------------------------------------------------------------
+# ============================================================
 
 find_package(OpenGL REQUIRED)
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(GTKMM REQUIRED IMPORTED_TARGET gtkmm-4.0)
 
-# ------------------------------------------------------------
+# ============================================================
+# GTKmm
+#
+# Linux:
+#   Use the system GTKmm installation.
+#
+# Windows:
+#   GTKmm MUST be a MinGW/Windows build.
+#
+# IMPORTANT:
+#   Do not allow Windows builds to use /usr/lib/pkgconfig from
+#   the Linux host.
+# ============================================================
+
+if(UNIX AND NOT APPLE)
+
+    find_package(PkgConfig REQUIRED)
+
+    pkg_check_modules(
+        GTKMM
+        REQUIRED
+        IMPORTED_TARGET
+        gtkmm-4.0
+    )
+
+elseif(WIN32)
+
+    find_package(PkgConfig REQUIRED)
+
+    if(DEFINED ENV{PKG_CONFIG_PATH})
+        message(STATUS
+            "Windows PKG_CONFIG_PATH: $ENV{PKG_CONFIG_PATH}"
+        )
+    endif()
+
+    pkg_check_modules(
+        GTKMM
+        REQUIRED
+        IMPORTED_TARGET
+        gtkmm-4.0
+    )
+
+endif()
+
+# ============================================================
 # OpenAL
-# ------------------------------------------------------------
+# ============================================================
 
 if(WIN32)
 
     add_library(OpenAL::OpenAL SHARED IMPORTED)
 
     set_target_properties(OpenAL::OpenAL PROPERTIES
+
         IMPORTED_IMPLIB
             "${CMAKE_SOURCE_DIR}/external/openal/libOpenAL32.a"
 
@@ -162,9 +238,9 @@ else()
 
 endif()
 
-# ------------------------------------------------------------
+# ============================================================
 # Shared engine
-# ------------------------------------------------------------
+# ============================================================
 
 file(GLOB_RECURSE ENGINE_SOURCES
     src/runtime/*.cpp
@@ -190,9 +266,9 @@ target_link_libraries(VivianiteEngine PUBLIC
     OpenAL::OpenAL
 )
 
-# ------------------------------------------------------------
+# ============================================================
 # Runtime
-# ------------------------------------------------------------
+# ============================================================
 
 add_executable(VivianiteRuntime
     src/runtime/engine.cpp
@@ -202,9 +278,9 @@ target_link_libraries(VivianiteRuntime PRIVATE
     VivianiteEngine
 )
 
-# ------------------------------------------------------------
+# ============================================================
 # Editor
-# ------------------------------------------------------------
+# ============================================================
 
 add_executable(VivianiteEditor
     src/editor/main.cpp
@@ -215,15 +291,23 @@ target_link_libraries(VivianiteEditor PRIVATE
     PkgConfig::GTKMM
 )
 
-# ------------------------------------------------------------
+# ============================================================
 # Compiler options
-# ------------------------------------------------------------
+# ============================================================
 
 if(MSVC)
 
-    target_compile_options(VivianiteEngine PRIVATE /W4)
-    target_compile_options(VivianiteRuntime PRIVATE /W4)
-    target_compile_options(VivianiteEditor PRIVATE /W4)
+    target_compile_options(VivianiteEngine PRIVATE
+        /W4
+    )
+
+    target_compile_options(VivianiteRuntime PRIVATE
+        /W4
+    )
+
+    target_compile_options(VivianiteEditor PRIVATE
+        /W4
+    )
 
 else()
 
@@ -242,54 +326,73 @@ else()
         -Wextra
     )
 
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+endif()
 
-        target_compile_options(VivianiteEngine PRIVATE
-            -O0
-            -g
-            -DDBG
-        )
+# ============================================================
+# Debug / Release
+# ============================================================
 
-        target_compile_options(VivianiteRuntime PRIVATE
-            -O0
-            -g
-            -DDBG
-        )
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
-        target_compile_options(VivianiteEditor PRIVATE
-            -O0
-            -g
-            -DDBG
-        )
+    target_compile_options(VivianiteEngine PRIVATE
+        -O0
+        -g
+    )
 
-    elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+    target_compile_definitions(VivianiteEngine PRIVATE
+        DBG
+    )
 
-        target_compile_options(VivianiteEngine PRIVATE
-            -O3
-        )
+    target_compile_options(VivianiteRuntime PRIVATE
+        -O0
+        -g
+    )
 
-        target_compile_options(VivianiteRuntime PRIVATE
-            -O3
-        )
+    target_compile_definitions(VivianiteRuntime PRIVATE
+        DBG
+    )
 
-        target_compile_options(VivianiteEditor PRIVATE
-            -O3
-        )
+    target_compile_options(VivianiteEditor PRIVATE
+        -O0
+        -g
+    )
 
-    endif()
+    target_compile_definitions(VivianiteEditor PRIVATE
+        DBG
+    )
+
+elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+
+    target_compile_options(VivianiteEngine PRIVATE
+        -O3
+    )
+
+    target_compile_options(VivianiteRuntime PRIVATE
+        -O3
+    )
+
+    target_compile_options(VivianiteEditor PRIVATE
+        -O3
+    )
 
 endif()
 
-# ------------------------------------------------------------
-# Windows DLL
-# ------------------------------------------------------------
+# ============================================================
+# Windows DLLs
+# ============================================================
 
 if(WIN32)
 
     add_custom_command(TARGET VivianiteRuntime POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_SOURCE_DIR}/external/openal/OpenAL32.dll"
         "$<TARGET_FILE_DIR:VivianiteRuntime>"
+    )
+
+    add_custom_command(TARGET VivianiteEditor POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/external/openal/OpenAL32.dll"
+        "$<TARGET_FILE_DIR:VivianiteEditor>"
     )
 
 endif()
