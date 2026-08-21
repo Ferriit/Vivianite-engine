@@ -1,4 +1,5 @@
 .PHONY: default runtime runtime_dbg release windows_release all_release debug clean
+MINGW_PREFIX := /ucrt64
 
 GL_VERSION := 4.6
 
@@ -23,9 +24,9 @@ windows_release: glad
 		-DCMAKE_TOOLCHAIN_FILE=cmake/mingw-w64.cmake \
 		-DENABLE_LTO=ON
 	cmake --build build-windows
-	cp /usr/x86_64-w64-mingw32/bin/libgcc_s_seh-1.dll build-windows/
-	cp /usr/x86_64-w64-mingw32/bin/libwinpthread-1.dll build-windows/
-	cp /usr/x86_64-w64-mingw32/bin/libstdc++-6.dll build-windows/
+	cp $(MINGW_PREFIX)/bin/libgcc_s_seh-1.dll build-windows/
+	cp $(MINGW_PREFIX)/bin/libwinpthread-1.dll build-windows/
+	cp $(MINGW_PREFIX)/bin/libstdc++-6.dll build-windows/
 
 all_release: release windows_release
 
