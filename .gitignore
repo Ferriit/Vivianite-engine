@@ -69,3 +69,5 @@ build-windows/
 dist/
 venv/
 .venv/
+
+external/glad/include/glad/gl.h
