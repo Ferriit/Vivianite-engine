@@ -60,7 +60,7 @@
     - [ ] CUTE scripting integration
 
 ## Editor
-- [ ] Editor
+- [~] Editor
     - [ ] Asset manager
     - [ ] Module system
     - [ ] Built-in compilation
@@ -102,9 +102,9 @@
 
 ## ECS / Modules
 - [~] ECS / Module system
-    - [~] Base entity
-    - [ ] Modules that inherit the base entity
-        - [ ] Transform Module
+    - [x] Base entity
+    - [~] Modules that inherit the base entity
+        - [~] Transform Module
         - [ ] Rigidbody Module
         - [ ] Meshrenderer Module
             - [ ] Material Module

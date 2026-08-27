@@ -39,6 +39,7 @@
 
 #include "../external/dr_libs/dr_wav.h"
 #include "../external/dr_libs/dr_mp3.h"
+#include "../../assets/definitions/types.hpp"
 
 #define VIVIANITE_VSYNC_TRUE 1
 #define VIVIANITE_VSYNC_FALSE 0
@@ -321,6 +322,7 @@ namespace vivianite {
     };
 
     using Entity = uint64_t;
+    
     struct Module {
         void* instance;
         std::type_index type;
