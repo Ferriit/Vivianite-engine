@@ -1,3 +1,4 @@
+#include "glad/gl.h"
 #include "include.hpp"
 
 namespace vivianite {
@@ -21,18 +22,18 @@ namespace vivianite {
         );
     }
 
-    bool renderer::read_shaders() {
+    bool renderer::read_shaders(shader& target) {
         logger->log(logger->INFO, "Reading GLSL shaders");
 
         // Frag
-        std::ifstream frag_file(this->program.frag_path);
+        std::ifstream frag_file(target.frag_path);
 
         if (!frag_file.is_open()) {
             logger->log(logger->FATAL, "Failed to read Fragment shader");
             return false;
         }
 
-        this->program.frag_raw = std::string(
+        target.frag_raw = std::string(
             (std::istreambuf_iterator<char>(frag_file)),
             std::istreambuf_iterator<char>()
         );
@@ -40,14 +41,14 @@ namespace vivianite {
         frag_file.close();
 
         // Vert
-        std::ifstream vert_file(this->program.vert_path);
+        std::ifstream vert_file(target.vert_path);
 
         if (!vert_file.is_open()) {
             logger->log(logger->FATAL, "Failed to read Vertex shader");
             return false;
         }
 
-        this->program.vert_raw = std::string(
+        target.vert_raw = std::string(
             (std::istreambuf_iterator<char>(vert_file)),
             std::istreambuf_iterator<char>()
         );
@@ -57,68 +58,69 @@ namespace vivianite {
         return true;
     }
 
-    void renderer::create_shaders() {
+    void renderer::create_shaders(shader& target) {
         logger->log(logger->INFO, "Creating shader program");
 
-        read_shaders(); // Populates frag_raw and vert_raw
+        if (!read_shaders(target))
+            return;
 
-        this->program.frag = glCreateShader(GL_FRAGMENT_SHADER);
-        this->program.vert = glCreateShader(GL_VERTEX_SHADER);
+        target.frag = glCreateShader(GL_FRAGMENT_SHADER);
+        target.vert = glCreateShader(GL_VERTEX_SHADER);
 
-        const char* frag_src = this->program.frag_raw.c_str();
-        const char* vert_src = this->program.vert_raw.c_str();
+        const char* frag_src = target.frag_raw.c_str();
+        const char* vert_src = target.vert_raw.c_str();
 
         // TODO: Add proper error checking
 
-        glShaderSource(this->program.frag, 1, &frag_src, nullptr);
-        glShaderSource(this->program.vert, 1, &vert_src, nullptr);
+        glShaderSource(target.frag, 1, &frag_src, nullptr);
+        glShaderSource(target.vert, 1, &vert_src, nullptr);
 
         // Compile fragment shader
-        glCompileShader(this->program.frag);
+        glCompileShader(target.frag);
 
         // Check if it compiled correctly
         GLint isCompiled = 0;
         char infoLog[512];
-        glGetShaderiv(this->program.frag, GL_COMPILE_STATUS, &isCompiled);
+        glGetShaderiv(target.frag, GL_COMPILE_STATUS, &isCompiled);
         if(isCompiled == GL_FALSE) {
-            glGetShaderInfoLog(this->program.frag, 512, nullptr, infoLog);
+            glGetShaderInfoLog(target.frag, 512, nullptr, infoLog);
             logger->log(logger->ERROR, "Fragment shader error:\n{}", infoLog);
 
-            glDeleteShader(this->program.frag); // Don't leak the shader.
+            glDeleteShader(target.frag);
             return;
         }
 
         // Compile vertex shader
-        glCompileShader(this->program.vert);
+        glCompileShader(target.vert);
 
         // Check if it compiled correctly
         isCompiled = 0;
-        glGetShaderiv(this->program.vert, GL_COMPILE_STATUS, &isCompiled);
+        glGetShaderiv(target.vert, GL_COMPILE_STATUS, &isCompiled);
         if(isCompiled == GL_FALSE) {
-            glGetShaderInfoLog(this->program.vert, 512, nullptr, infoLog);
+            glGetShaderInfoLog(target.vert, 512, nullptr, infoLog);
             logger->log(logger->ERROR, "Vertex shader error:\n{}", infoLog);
 
-            glDeleteShader(this->program.frag); // Don't leak the shader.
+            glDeleteShader(target.vert);
             return;
         }
 
-        this->program.program = glCreateProgram();
+        target.program = glCreateProgram();
 
-        glAttachShader(this->program.program, this->program.vert);
-        glAttachShader(this->program.program, this->program.frag);
+        glAttachShader(target.program, target.vert);
+        glAttachShader(target.program, target.frag);
 
-        glLinkProgram(this->program.program);
+        glLinkProgram(target.program);
 
         GLint isLinked = 0;
-        glGetProgramiv(this->program.program, GL_LINK_STATUS, &isLinked);
+        glGetProgramiv(target.program, GL_LINK_STATUS, &isLinked);
 
         if (isLinked == GL_FALSE) {
             char infoLog[512];
-            glGetProgramInfoLog(this->program.program, 512, nullptr, infoLog);
+            glGetProgramInfoLog(target.program, 512, nullptr, infoLog);
 
             logger->log(logger->FATAL, "Shader program link error:\n{}", infoLog);
 
-            glDeleteProgram(this->program.program);
+            glDeleteProgram(target.program);
             return;
         }
     }
@@ -268,7 +270,7 @@ namespace vivianite {
         glEnableVertexAttribArray(2);
 
         // UV
-        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(9 * sizeof(float)));
+        glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(9 * sizeof(float)));
         glEnableVertexAttribArray(3);
 
         return vao;
@@ -295,8 +297,8 @@ namespace vivianite {
         );
 
         // Tiles
-        uint32_t tiles_x = (width + 15) / 16;
-        uint32_t tiles_y = (height + 15) / 16;
+        uint32_t tiles_x = (framebuffer_width + 15) / 16;
+        uint32_t tiles_y = (framebuffer_height + 15) / 16;
         uint32_t tile_count = tiles_x * tiles_y;
 
         this->tiles.resize(tile_count);
@@ -349,12 +351,116 @@ namespace vivianite {
     }
 
     void renderer::init_FBOs() {
-        glGenFramebuffers(1, &depth_fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, depth_fbo);
+        glGenFramebuffers(1, &this->depth_fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, this->depth_fbo);
 
-        glGenTextures(1, &depth_texture);
-        glBindTexture(GL_TEXTURE_2D, depth_texture);
+        glGenTextures(1, &this->depth_texture);
+        glBindTexture(GL_TEXTURE_2D, this->depth_texture);
 
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_DEPTH_COMPONENT32F,
+            framebuffer_width,
+            framebuffer_height,
+            0,
+            GL_DEPTH_COMPONENT,
+            GL_FLOAT,
+            nullptr
+        );
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        glFramebufferTexture2D(
+            GL_FRAMEBUFFER,
+            GL_DEPTH_ATTACHMENT,
+            GL_TEXTURE_2D,
+            this->depth_texture,
+            0
+        );
+
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+            logger->log(logger->ERROR, "Depth FBO incomplete");
+        }
+
+        glGenFramebuffers(1, &this->frame_fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, this->frame_fbo);
+
+        glGenTextures(1, &this->color_texture);
+        glBindTexture(GL_TEXTURE_2D, this->color_texture);
+
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RGBA8,
+            framebuffer_width,
+            framebuffer_height,
+            0,
+            GL_RGBA,
+            GL_UNSIGNED_BYTE,
+            nullptr
+        );
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        glFramebufferTexture2D(
+            GL_FRAMEBUFFER,
+            GL_COLOR_ATTACHMENT0,
+            GL_TEXTURE_2D,
+            this->color_texture,
+            0
+        );
+
+        glGenTextures(1, &this->frame_depth_texture);
+        glBindTexture(GL_TEXTURE_2D, this->frame_depth_texture);
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_DEPTH_COMPONENT32F,
+            framebuffer_width,
+            framebuffer_height,
+            0,
+            GL_DEPTH_COMPONENT,
+            GL_FLOAT,
+            nullptr
+        );
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        glFramebufferTexture2D(
+            GL_FRAMEBUFFER,
+            GL_DEPTH_ATTACHMENT,
+            GL_TEXTURE_2D,
+            this->frame_depth_texture,
+            0
+        );
+
+        glDrawBuffer(GL_COLOR_ATTACHMENT0);
+        glReadBuffer(GL_COLOR_ATTACHMENT0);
+
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+            logger->log(logger->ERROR, "Color FBO incomplete");
+        }
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+
+    void renderer::resize_render_targets(int width, int height) {
+        this->framebuffer_width = width;
+        this->framebuffer_height = height;
+
+        glBindTexture(GL_TEXTURE_2D, this->depth_texture);
         glTexImage2D(
             GL_TEXTURE_2D,
             0,
@@ -367,25 +473,67 @@ namespace vivianite {
             nullptr
         );
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-        glFramebufferTexture2D(
-            GL_FRAMEBUFFER,
-            GL_DEPTH_ATTACHMENT,
+        glBindTexture(GL_TEXTURE_2D, this->color_texture);
+        glTexImage2D(
             GL_TEXTURE_2D,
-            depth_texture,
-            0
+            0,
+            GL_RGBA8,
+            width,
+            height,
+            0,
+            GL_RGBA,
+            GL_UNSIGNED_BYTE,
+            nullptr
         );
 
-        glDrawBuffer(GL_NONE);
-        glReadBuffer(GL_NONE);
+        glBindTexture(GL_TEXTURE_2D, this->frame_depth_texture);
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_DEPTH_COMPONENT32F,
+            width,
+            height,
+            0,
+            GL_DEPTH_COMPONENT,
+            GL_FLOAT,
+            nullptr
+        );
 
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-            std::cout << "Depth FBO incomplete\n";
+        const uint32_t tiles_x = (width + 15) / 16;
+        const uint32_t tiles_y = (height + 15) / 16;
+        const uint32_t tile_count = tiles_x * tiles_y;
+        this->tiles.resize(tile_count);
+        for (uint32_t i = 0; i < tile_count; ++i) {
+            this->tiles[i].count = 0;
+            this->tiles[i].offset = i * MAX_LIGHTS_PER_TILE;
         }
 
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, this->tile_ssbo);
+        glBufferData(
+            GL_SHADER_STORAGE_BUFFER,
+            this->tiles.size() * sizeof(tile),
+            this->tiles.data(),
+            GL_DYNAMIC_DRAW
+        );
+
+        std::vector<uint32_t> light_indices(tile_count * MAX_LIGHTS_PER_TILE, 0);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, this->tile_light_ssbo);
+        glBufferData(
+            GL_SHADER_STORAGE_BUFFER,
+            light_indices.size() * sizeof(uint32_t),
+            light_indices.data(),
+            GL_DYNAMIC_DRAW
+        );
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, framebuffer_width, framebuffer_height);
+        this->projection = glm::perspective(
+            glm::radians(this->FOV),
+            static_cast<float>(width) / static_cast<float>(height),
+            0.1f,
+            100.0f
+        );
     }
 
     void renderer::upload_lights() {
@@ -427,8 +575,14 @@ namespace vivianite {
 
         glDisable(GL_CULL_FACE);
 
-        glfwGetFramebufferSize(window, &width, &height);
-        glViewport(0, 0, width, height);
+        glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
+        glViewport(0, 0, framebuffer_width, framebuffer_height);
+        this->projection = glm::perspective(
+            glm::radians(this->FOV),
+            static_cast<float>(framebuffer_width) / static_cast<float>(framebuffer_height),
+            0.1f,
+            100.0f
+        );
 
         glfwSwapInterval(this->vsync);
 
@@ -449,6 +603,52 @@ namespace vivianite {
             glfwSetWindowIcon(window, 1, &icon);
             stbi_image_free(icon.pixels);
         }
+
+        float vertices[] = {
+            // position      // UV
+            -1.0f, -1.0f,    0.0f, 0.0f,
+             1.0f, -1.0f,    1.0f, 0.0f,
+             1.0f,  1.0f,    1.0f, 1.0f,
+
+            -1.0f, -1.0f,    0.0f, 0.0f,
+             1.0f,  1.0f,    1.0f, 1.0f,
+            -1.0f,  1.0f,    0.0f, 1.0f
+        };
+
+        glGenVertexArrays(1, &this->screen_vao);
+        glGenBuffers(1, &this->screen_vbo);
+
+        glBindVertexArray(this->screen_vao);
+
+        glBindBuffer(GL_ARRAY_BUFFER, this->screen_vbo);
+        glBufferData(
+            GL_ARRAY_BUFFER,
+            sizeof(vertices),
+            vertices,
+            GL_STATIC_DRAW
+        );
+
+        glVertexAttribPointer(
+            0,
+            2,
+            GL_FLOAT,
+            GL_FALSE,
+            4 * sizeof(float),
+            (void*)0
+        );
+        glEnableVertexAttribArray(0);
+
+        glVertexAttribPointer(
+            1,
+            2,
+            GL_FLOAT,
+            GL_FALSE,
+            4 * sizeof(float),
+            (void*)(2 * sizeof(float))
+        );
+        glEnableVertexAttribArray(1);
+
+        glBindVertexArray(0);
 
         return true;
     }
@@ -497,7 +697,7 @@ namespace vivianite {
 
         glUseProgram(depth_program);
 
-        glViewport(0, 0, width, height);
+        glViewport(0, 0, this->framebuffer_width, this->framebuffer_height);
         glEnable(GL_DEPTH_TEST);
         glDepthMask(GL_TRUE);
         glDepthFunc(GL_LESS);
@@ -592,8 +792,8 @@ namespace vivianite {
         glViewport(
             0,
             0,
-            this->width,
-            this->height
+            this->framebuffer_width,
+            this->framebuffer_height
         );
 
         glBindTexture(GL_TEXTURE_2D, depth_texture);
@@ -607,6 +807,16 @@ namespace vivianite {
         this->last = this->time;
 
         this->update_func();
+
+        int framebuffer_width = 0;
+        int framebuffer_height = 0;
+        glfwGetFramebufferSize(this->window, &framebuffer_width, &framebuffer_height);
+        if (framebuffer_width <= 0 || framebuffer_height <= 0) {
+            return;
+        }
+        if (framebuffer_width != this->framebuffer_width || framebuffer_height != this->framebuffer_height) {
+            this->resize_render_targets(framebuffer_width, framebuffer_height);
+        }
 
         // Camera rotation and position
         glm::mat4 view = glm::mat4(1.0f);
@@ -643,6 +853,13 @@ namespace vivianite {
             glm::value_ptr(view)
         );
 
+        glUniformMatrix4fv(
+            glGetUniformLocation(this->program.program, "projection"),
+            1,
+            GL_FALSE,
+            glm::value_ptr(this->projection)
+        );
+
         // Camera
         glUniform3fv(
             glGetUniformLocation(this->program.program, "camera_pos"),
@@ -658,8 +875,8 @@ namespace vivianite {
 
         glUniform2f(
             glGetUniformLocation(this->program.program, "screen_size"),
-            this->width,
-            this->height
+            this->framebuffer_width,
+            this->framebuffer_height
         );
 
         // Get depth buffer 
@@ -682,8 +899,8 @@ namespace vivianite {
         GLint loc_tx = glGetUniformLocation(this->tile_culling_init_program, "tiles_x");
         GLint loc_ty = glGetUniformLocation(this->tile_culling_init_program, "tiles_y");
 
-        uint32_t tiles_x = (this->width + 15) / 16;
-        uint32_t tiles_y = (this->height + 15) / 16;
+        uint32_t tiles_x = (this->framebuffer_width + 15) / 16;
+        uint32_t tiles_y = (this->framebuffer_height + 15) / 16;
 
         // this->logger->log(this->logger->DEBUG,
         //     "tiles_x loc=%d tiles_y loc=%d, values: %u %u %d",
@@ -765,6 +982,11 @@ namespace vivianite {
 
         // Actually Render
         glUseProgram(this->program.program);
+
+        // Bind frame buffer
+        glBindFramebuffer(GL_FRAMEBUFFER, this->frame_fbo);
+        glViewport(0, 0, this->framebuffer_width, this->framebuffer_height);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, this->light_ssbo);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, this->tile_ssbo);
@@ -848,7 +1070,27 @@ namespace vivianite {
             glDrawArrays(GL_TRIANGLES, 0, obj.obj.vertex_count);
         }
 
-        glfwSwapBuffers(this->window);
+        if (this->draw_frame_buffer) {
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glViewport(0, 0, this->framebuffer_width, this->framebuffer_height);
+
+            glDisable(GL_DEPTH_TEST);
+
+            glUseProgram(this->screen_program.program);
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, this->color_texture);
+
+            glUniform1i(
+                glGetUniformLocation(this->screen_program.program, "screen_texture"),
+                0
+            );
+
+            glBindVertexArray(this->screen_vao);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+
+            glfwSwapBuffers(this->window);
+        }
     }
 
     void renderer::exit() {

@@ -614,6 +614,8 @@ namespace vivianite {
             int width = 800;
             int height = 600;
             
+            int framebuffer_width = 800;
+            int framebuffer_height = 600;
             int vsync = VIVIANITE_VSYNC_FALSE;
 
             const char* title = "Vivianite Window";
@@ -621,6 +623,8 @@ namespace vivianite {
             float FOV = 90;
 
             bool init_status = true;
+
+            bool draw_frame_buffer = true;
 
             GLFWwindow* window;
             shader program;
@@ -654,6 +658,14 @@ namespace vivianite {
             GLuint depth_fbo;
             GLuint depth_texture;
 
+            GLuint frame_fbo;
+            GLuint color_texture;
+            GLuint frame_depth_texture;
+
+            GLuint screen_vao;
+            GLuint screen_vbo;
+            shader screen_program;
+
             double delta_time = 0.0;
             double time = 0.0;
             double last = 0.0;
@@ -666,9 +678,9 @@ namespace vivianite {
 
             renderer(Logging* l_ctx);
 
-            bool read_shaders();
+            bool read_shaders(shader& target);
 
-            void create_shaders();
+            void create_shaders(shader& target);
 
             void create_depth_program(std::string path);
 
@@ -679,6 +691,8 @@ namespace vivianite {
             void init_SSBOs();
 
             void init_FBOs();
+
+            void resize_render_targets(int width, int height);
 
             void upload_lights();
 

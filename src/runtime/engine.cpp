@@ -103,12 +103,14 @@ namespace vivianite {
 
         r_ctx.program.frag_path = "assets/shaders/frag.glsl";
         r_ctx.program.vert_path = "assets/shaders/vert.glsl";
+        r_ctx.create_shaders(r_ctx.program);
 
-        r_ctx.create_shaders();
+        r_ctx.screen_program.frag_path = "assets/shaders/screen_frag.glsl";
+        r_ctx.screen_program.vert_path = "assets/shaders/screen_vert.glsl";
+        r_ctx.create_shaders(r_ctx.screen_program);
 
         r_ctx.tile_culling_program = r_ctx.create_compute_program("assets/shaders/cull.comp");
         r_ctx.tile_culling_init_program = r_ctx.create_compute_program("assets/shaders/init_cull.comp");
-
         r_ctx.create_depth_program("assets/shaders/depth.vert");
 
         this->l_ctx.log(Logging::INFO, "Assigning functions");
