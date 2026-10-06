@@ -18,15 +18,17 @@ release: glad clean_bin
 	cmake --build build
 
 windows_release: glad
-	mkdir -p build-windows
+	rm -rf build-windows
 	cmake -B build-windows -G Ninja \
 		-DCMAKE_BUILD_TYPE=Release \
 		-DCMAKE_TOOLCHAIN_FILE=cmake/mingw-w64.cmake \
-		-DENABLE_LTO=ON
-	cmake --build build-windows
-	cp $(MINGW_PREFIX)/bin/libgcc_s_seh-1.dll build-windows/
-	cp $(MINGW_PREFIX)/bin/libwinpthread-1.dll build-windows/
-	cp $(MINGW_PREFIX)/bin/libstdc++-6.dll build-windows/
+		-DENABLE_LTO=ON \
+		-DBUILD_EDITOR=OFF
+	cmake --build build-windows	
+	cp /usr/x86_64-w64-mingw32/bin/libstdc++-6.dll build-windows/
+	cp /usr/x86_64-w64-mingw32/bin/libgcc_s_seh-1.dll build-windows/
+	cp /usr/x86_64-w64-mingw32/bin/libwinpthread-1.dll build-windows/
+	cp external/openal/soft_oal.dll build-windows/
 
 all_release: release windows_release
 

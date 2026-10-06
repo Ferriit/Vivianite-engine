@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
+option(BUILD_EDITOR "Build the Vivianite editor" ON)
 
 project(Vivianite LANGUAGES C CXX)
 
@@ -282,14 +283,16 @@ target_link_libraries(VivianiteRuntime PRIVATE
 # Editor
 # ============================================================
 
-add_executable(VivianiteEditor
-    src/editor/main.cpp
-)
+if(BUILD_EDITOR)
+    add_executable(VivianiteEditor
+        src/editor/main.cpp
+    )
 
-target_link_libraries(VivianiteEditor PRIVATE
-    VivianiteEngine
-    PkgConfig::GTKMM
-)
+    target_link_libraries(VivianiteEditor PRIVATE
+        VivianiteEngine
+        PkgConfig::GTKMM
+    )
+endif()
 
 # ============================================================
 # Compiler options
@@ -321,10 +324,12 @@ else()
         -Wextra
     )
 
-    target_compile_options(VivianiteEditor PRIVATE
-        -Wall
-        -Wextra
-    )
+    if(BUILD_EDITOR)
+        target_compile_options(VivianiteEditor PRIVATE
+            -Wall
+            -Wextra
+        )
+    endif()
 
 endif()
 
@@ -371,9 +376,11 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
         -O3
     )
 
-    target_compile_options(VivianiteEditor PRIVATE
-        -O3
-    )
+    if(BUILD_EDITOR)
+        target_compile_options(VivianiteEditor PRIVATE
+            -O3
+        )
+    endif()
 
 endif()
 
@@ -389,10 +396,12 @@ if(WIN32)
         "$<TARGET_FILE_DIR:VivianiteRuntime>"
     )
 
-    add_custom_command(TARGET VivianiteEditor POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_SOURCE_DIR}/external/openal/OpenAL32.dll"
-        "$<TARGET_FILE_DIR:VivianiteEditor>"
-    )
+    if(BUILD_EDITOR)
+        add_custom_command(TARGET VivianiteEditor POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_SOURCE_DIR}/external/openal/OpenAL32.dll"
+            "$<TARGET_FILE_DIR:VivianiteEditor>"
+        )
+    endif()
 
 endif()
