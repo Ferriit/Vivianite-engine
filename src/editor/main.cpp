@@ -1,132 +1,163 @@
-#include <gtkmm.h>
-#include <thread>
-#include <string>
-#include "process.hpp"
+#include "main.hpp"
+#include <iostream>
 
-class MainWindow : public Gtk::Window {
-    public:
-        Gtk::TextView console_view;
-        Glib::RefPtr<Gtk::TextBuffer> console_buffer;
+int main() {
+    // Initialize SDL
+    SDL_Init(SDL_INIT_VIDEO);
 
-        Gtk::Button build_button{"Build"};
+    // OpenGL 4.6 COMPAT
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
+                        SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
 
-        MainWindow() {
-            set_title("Vivianite Editor");
-            set_default_size(1280, 720);
+    // Create window
+    SDL_Window* window = SDL_CreateWindow(
+        "Vivianite Editor",
+        INITIAL_WIDTH, INITIAL_HEIGHT,
+        SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE
+    );
 
-            // Load custom CSS
-            auto css = Gtk::CssProvider::create();
-            const std::string css_data = R"(
-                .panel {
-                    background-color: #1e1e2e;
-                    border: 1px solid #cba6f7;
-                    border-radius: 4px;
-                    padding: 8px;
-                }
-            )";
-            css->load_from_data(css_data);
+    if (window == nullptr) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create SDL3 window: %s\n", SDL_GetError());
+        return 1;
+    }
 
-            // Set display
-            auto display = Gdk::Display::get_default();
-            if (display) {
-                Gtk::StyleContext::add_provider_for_display(
-                    display,
-                    css,
-                    GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
-                );
+    SDL_SetWindowRelativeMouseMode(window, false);
+
+    // Initialize OpenGL
+    SDL_GLContext glctx = SDL_GL_CreateContext(window);
+    if (!glctx) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create OpenGL Context: %s\n", SDL_GetError());
+        return 1;
+    }
+
+    // Initialize OpenGL bindings
+    GLenum glewRes = glewInit();
+    if (glewRes != GLEW_OK) {
+        SDL_Log("glewInit failed: %s\n", glewGetErrorString(glewRes));
+        SDL_GL_DestroyContext(glctx);
+        SDL_DestroyWindow(window);
+        return 1;
+    }
+
+    // Initialize FreeType
+    FT_Library ft;
+    face;
+
+    FT_Init_FreeType(&ft);
+
+    FT_New_Face(
+        ft,
+        "external/MapleMono-NF-Regular.ttf",
+        0,
+        &face
+    );
+    FT_Set_Pixel_Sizes(face, 0, FONT_SIZE);
+
+    // Initialize MicroUI
+    mu_init(&ctx);
+
+    ctx.text_width = text_width;
+    ctx.text_height = text_height;
+
+    // Set OpenGL to "pixel-mode"
+    SDL_GetWindowSizeInPixels(window, &width, &height);
+
+    glViewport(0, 0, width, height);
+    
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, width, height, 0, -1, 1);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    while (glGetError() != GL_NO_ERROR);
+    std::cout << glGetString(GL_VERSION) << std::endl;
+
+    bool running = true;
+    SDL_Event event;
+
+    SDL_StartTextInput(window);
+
+    while (running) {
+        while (SDL_PollEvent(&event)) {
+            switch (event.type) {
+                case SDL_EVENT_QUIT: {
+                    running = false;
+                } break;
+                case SDL_EVENT_MOUSE_BUTTON_DOWN: {
+                    int mu_btn = 0;
+                    if (event.button.button == SDL_BUTTON_LEFT)   mu_btn = MU_MOUSE_LEFT;
+                    if (event.button.button == SDL_BUTTON_RIGHT)  mu_btn = MU_MOUSE_RIGHT;
+                    if (event.button.button == SDL_BUTTON_MIDDLE) mu_btn = MU_MOUSE_MIDDLE;
+
+                    if (mu_btn) {
+                        mu_input_mousedown(&ctx, event.button.x, event.button.y, mu_btn);
+                    }
+                } break;
+                case SDL_EVENT_MOUSE_BUTTON_UP: {
+                    int mu_btn = 0;
+                    if (event.button.button == SDL_BUTTON_LEFT)   mu_btn = MU_MOUSE_LEFT;
+                    if (event.button.button == SDL_BUTTON_RIGHT)  mu_btn = MU_MOUSE_RIGHT;
+                    if (event.button.button == SDL_BUTTON_MIDDLE) mu_btn = MU_MOUSE_MIDDLE;
+
+                    if (mu_btn) {
+                        mu_input_mouseup(&ctx, event.button.x, event.button.y, mu_btn);
+                    }
+                } break;
+                case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+                case SDL_EVENT_WINDOW_RESIZED:
+                case SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED: {
+                    update_viewport(window);
+                } break;
+                case SDL_EVENT_TEXT_INPUT: {
+                    printf("%s\n", event.text.text);
+                } break;
+            }
+        }
+
+        input_microui();
+        
+        mu_begin(&ctx);
+        mu_Container* win = mu_get_container(&ctx, "Vivianite Editor");
+        if (win) {
+            win->rect = mu_rect(0, 0, width, height);
+        }
+        if (mu_begin_window(&ctx, "Vivianite Editor", mu_rect(0, 0, width, height))) {
+            mu_layout_row(&ctx, 1, (int[]){ -1 }, 0);
+
+            mu_label(&ctx, "Hello, World!");
+
+            if (mu_button_ex(&ctx, "Click me!", 0, 0)) {
+                std::cout << "Clicked!" << std::endl;
             }
 
-            auto *main_paned = Gtk::make_managed<Gtk::Paned>(Gtk::Orientation::VERTICAL);
-
-            Gtk::ScrolledWindow console_scroll;
-
-            auto *editor_container = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-            auto *console_container = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-            auto *browser_container = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-
-            // Set up console
-            this->console_buffer = Gtk::TextBuffer::create();
-            this->console_view.set_buffer(this->console_buffer);
-            this->console_view.set_editable(false);
-            this->console_view.set_cursor_visible(false);
-            this->console_view.set_wrap_mode(Gtk::WrapMode::WORD_CHAR);
-            this->console_view.set_vexpand(true);
-            this->console_view.set_hexpand(true);
-            
-            // Set up Editor
-            editor_container->append(build_button);
-            this->build_button.signal_clicked().connect(
-                sigc::bind(
-                    sigc::mem_fun(*this, &MainWindow::run_console),
-                    "./build/VivianiteRuntime"
-                )
-            );
-            build_button.set_hexpand(false);
-            build_button.set_halign(Gtk::Align::START);
-
-            console_scroll.set_child(*console_container);
-            console_scroll.set_vexpand(true);
-            console_scroll.set_hexpand(true);
-
-            editor_container->add_css_class("panel");
-            console_container->add_css_class("panel");
-            browser_container->add_css_class("panel");
-
-            auto *browser_label = Gtk::make_managed<Gtk::Label>("Asset Manager");
-            auto *console_label = Gtk::make_managed<Gtk::Label>("Developer Console");
-            auto *editor_label = Gtk::make_managed<Gtk::Label>("Editor");
-
-            editor_container->append(*editor_label);
-            console_container->append(*console_label);
-            console_container->append(this->console_view);
-            browser_container->append(*browser_label);
-
-            main_paned->set_start_child(*editor_container);
-            main_paned->set_end_child(console_scroll);
-
-            main_paned->set_position(620);
-
-            set_child(*main_paned);
+            mu_end_window(&ctx);
+        }
+        else {
+            running = false;
         }
 
-        void append_console_text(const std::string& text) {
-            if (text.empty())
-                return;
+        mu_end(&ctx);
+        glClear(GL_COLOR_BUFFER_BIT);
+        // Scissors for clipping
+        glEnable(GL_SCISSOR_TEST);
+        render(&ctx);
 
-            console_buffer->insert(console_buffer->end(), text);
+        SDL_GL_SwapWindow(window);
+    }
+    SDL_StopTextInput(window);
 
-            auto end = console_buffer->end();
-            console_view.scroll_to(end);
-        }
-
-        void run_console(const std::string command) {
-            Process process = process_create(command);
-
-            std::thread([this, process = std::move(process)]() mutable {
-                std::string chunk;
-
-                while (process_read_chunk(process, chunk)) {
-                    if (!chunk.empty()) {
-                        Glib::MainContext::get_default()->invoke(
-                            [this, text = std::move(chunk)]() mutable {
-                                this->append_console_text(text);
-                                return false;
-                            }
-                        );
-                    }
-                }
-
-                Glib::MainContext::get_default()->invoke(
-                    [this]() {
-                        this->append_console_text("\n[process exited]\n");
-                        return false;
-                    }
-                );
-            }).detach();
-        }
-};
-
-int main(int argc, char **argv) {
-    auto app = Gtk::Application::create("org.vivianite.editor");
-    return app->make_window_and_run<MainWindow>(argc, argv);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+    return 0;
 }
+

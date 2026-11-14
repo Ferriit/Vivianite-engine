@@ -186,6 +186,9 @@ find_package(OpenGL REQUIRED)
 if(UNIX AND NOT APPLE)
 
     find_package(PkgConfig REQUIRED)
+    find_package(Freetype REQUIRED)
+    find_package(SDL3 REQUIRED CONFIG)
+    find_package(GLEW REQUIRED)
 
     pkg_check_modules(
         GTKMM
@@ -197,6 +200,9 @@ if(UNIX AND NOT APPLE)
 elseif(WIN32)
 
     find_package(PkgConfig REQUIRED)
+    find_package(Freetype REQUIRED)
+    find_package(SDL3 REQUIRED CONFIG)
+    find_package(GLEW REQUIRED)
 
     if(DEFINED ENV{PKG_CONFIG_PATH})
         message(STATUS
@@ -288,9 +294,16 @@ if(BUILD_EDITOR)
         src/editor/main.cpp
     )
 
+    target_sources(VivianiteEditor PRIVATE
+        external/microui/src/microui.c
+    )
+
     target_link_libraries(VivianiteEditor PRIVATE
         VivianiteEngine
         PkgConfig::GTKMM
+        Freetype::Freetype
+        SDL3::SDL3
+        GLEW::GLEW
     )
 endif()
 
