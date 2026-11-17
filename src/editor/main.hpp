@@ -249,3 +249,29 @@ void input_microui(void) {
     mu_input_mousemove(&ctx, (int)mouse_x, (int)mouse_y);
 }
 
+
+void set_colors(void) {
+    // Text
+    ctx.style->colors[MU_COLOR_TEXT] =
+        mu_color(255, 255, 255, 255);
+
+    // Window background
+    ctx.style->colors[MU_COLOR_WINDOWBG] =
+        mu_color(10, 25, 10, 255);
+
+    // Window title background
+    ctx.style->colors[MU_COLOR_TITLEBG] =
+        mu_color(0, 15, 0, 255);
+
+    // Buttons
+    ctx.style->colors[MU_COLOR_BUTTON] =
+        mu_color(50, 200, 100, 255);
+
+    // Button hover
+    ctx.style->colors[MU_COLOR_BUTTONHOVER] =
+        mu_color(70, 220, 120, 255);
+
+    // Button pressed/focused
+    ctx.style->colors[MU_COLOR_BUTTONFOCUS] =
+        mu_color(30, 180, 80, 255);
+}

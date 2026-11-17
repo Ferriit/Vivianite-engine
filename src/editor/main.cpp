@@ -58,6 +58,8 @@ int main() {
     // Initialize MicroUI
     mu_init(&ctx);
 
+    set_colors();
+
     ctx.text_width = text_width;
     ctx.text_height = text_height;
 
