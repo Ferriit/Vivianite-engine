@@ -9,11 +9,8 @@ int frame_count = 0;
 namespace vivianite {
     engine::engine() : r_ctx(&l_ctx) {
         s_ctx.r_ctx = (void*)(&this->r_ctx);
-
         s_ctx.l_ctx = &l_ctx;
-
         i_ctx.r_ptr = (void*)&r_ctx;
-
         a_ctx.l_ctx = &l_ctx;
         
         Scheduler::Task e_init = (Scheduler::Task) {
@@ -43,9 +40,7 @@ namespace vivianite {
         elapsed_time = Time().get_time();
 
         r_ctx.initialize();
-
         i_ctx.initialize();
-
         a_ctx.initialize();
 
         i_ctx.set_axis("k_vertical_axis", (Axis){

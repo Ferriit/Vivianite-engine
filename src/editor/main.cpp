@@ -1,6 +1,79 @@
 #include "main.hpp"
 #include <iostream>
 
+#define HIERARCHY_WIDTH 200
+#define INSPECTOR_WIDTH 200
+#define ASSET_MANAGER_HEIGHT 300
+
+#define MIN_CONTENT_WIDTH 600
+#define MIN_CONTENT_HEIGHT 450
+
+#define MIN_WINDOW_WIDTH HIERARCHY_WIDTH + MIN_CONTENT_WIDTH + INSPECTOR_WIDTH
+#define MIN_WINDOW_HEIGHT ASSET_MANAGER_HEIGHT + MIN_CONTENT_HEIGHT
+
+bool create_windows(mu_Context* ctx) {
+    // Hierarchy
+    mu_Container* h_win = mu_get_container(ctx, "Hierarchy");
+    if (h_win) {
+        h_win->rect = mu_rect(
+            0, 0, HIERARCHY_WIDTH,
+            height - ASSET_MANAGER_HEIGHT
+        );
+    }
+
+    if (mu_begin_window(ctx, "Hierarchy",
+        mu_rect(0, 0, HIERARCHY_WIDTH, height))) {
+
+        mu_layout_row(ctx, 2, (int[]){ HIERARCHY_WIDTH / 2, -1 }, 0);
+        mu_label(ctx, "Thing 1");
+
+        if (mu_button_ex(ctx, "Click me!", 0, 0)) {
+            std::cout << "Clicked!" << std::endl;
+        }
+
+        mu_end_window(ctx);
+    }
+
+    // Asset Manager
+    mu_Container* a_win = mu_get_container(ctx, "Asset Manager");
+    if (a_win) {
+        a_win->rect = mu_rect(
+            0, height - ASSET_MANAGER_HEIGHT,
+            width - INSPECTOR_WIDTH, ASSET_MANAGER_HEIGHT
+        );
+    }
+
+    if (mu_begin_window(ctx, "Asset Manager",
+        mu_rect(0, height - ASSET_MANAGER_HEIGHT,
+                width - INSPECTOR_WIDTH, ASSET_MANAGER_HEIGHT))) {
+
+        mu_layout_row(ctx, 1, (int[]){ -1 }, 0);
+        mu_label(ctx, "Asset thing");
+
+        mu_end_window(ctx);
+    }
+
+    mu_Container* i_win = mu_get_container(ctx, "Inspector");
+    if (i_win) {
+        i_win->rect = mu_rect(
+            width - INSPECTOR_WIDTH, 0,
+            INSPECTOR_WIDTH, height
+        );
+    }
+
+    if (mu_begin_window(ctx, "Inspector",
+        mu_rect(width - INSPECTOR_WIDTH, 0,
+            INSPECTOR_WIDTH, height))) {
+
+        mu_layout_row(ctx, 2, (int[]){ INSPECTOR_WIDTH / 2, -1 }, 0);
+        mu_label(ctx, "Inspector test");
+
+        mu_end_window(ctx);
+    }
+
+    return true;
+}
+
 int main() {
     // Initialize SDL
     SDL_Init(SDL_INIT_VIDEO);
@@ -24,6 +97,7 @@ int main() {
     }
 
     SDL_SetWindowRelativeMouseMode(window, false);
+    SDL_SetWindowMinimumSize(window, MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT);
 
     // Initialize OpenGL
     SDL_GLContext glctx = SDL_GL_CreateContext(window);
@@ -129,22 +203,7 @@ int main() {
         input_microui();
         
         mu_begin(&ctx);
-        mu_Container* win = mu_get_container(&ctx, "Vivianite Editor");
-        if (win) {
-            win->rect = mu_rect(0, 0, width, height);
-        }
-        if (mu_begin_window(&ctx, "Vivianite Editor", mu_rect(0, 0, width, height))) {
-            mu_layout_row(&ctx, 1, (int[]){ -1 }, 0);
-
-            mu_label(&ctx, "Hello, World!");
-
-            if (mu_button_ex(&ctx, "Click me!", 0, 0)) {
-                std::cout << "Clicked!" << std::endl;
-            }
-
-            mu_end_window(&ctx);
-        }
-        else {
+        if (!create_windows(&ctx)) {
             running = false;
         }
 

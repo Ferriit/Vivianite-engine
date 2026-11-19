@@ -257,11 +257,11 @@ void set_colors(void) {
 
     // Window background
     ctx.style->colors[MU_COLOR_WINDOWBG] =
-        mu_color(10, 25, 10, 255);
+        mu_color(10, 15, 10, 255);
 
     // Window title background
     ctx.style->colors[MU_COLOR_TITLEBG] =
-        mu_color(0, 15, 0, 255);
+        mu_color(0, 5, 0, 255);
 
     // Buttons
     ctx.style->colors[MU_COLOR_BUTTON] =
@@ -274,4 +274,8 @@ void set_colors(void) {
     // Button pressed/focused
     ctx.style->colors[MU_COLOR_BUTTONFOCUS] =
         mu_color(30, 180, 80, 255);
+
+    // Border
+    ctx.style->colors[MU_COLOR_BORDER] =
+        mu_color(24, 36, 24, 255);
 }
