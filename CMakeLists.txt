@@ -164,30 +164,23 @@ target_include_directories(glm INTERFACE
     external/glm
 )
 
+
 # ============================================================
 # OpenGL
 # ============================================================
 
 find_package(OpenGL REQUIRED)
 
-# ============================================================
-# GTKmm
-#
-# Linux:
-#   Use the system GTKmm installation.
-#
-# Windows:
-#   GTKmm MUST be a MinGW/Windows build.
-#
-# IMPORTANT:
-#   Do not allow Windows builds to use /usr/lib/pkgconfig from
-#   the Linux host.
-# ============================================================
 
 if(UNIX AND NOT APPLE)
 
     find_package(PkgConfig REQUIRED)
-    find_package(SDL3 REQUIRED CONFIG)
+    set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+    set(SDL_STATIC ON CACHE BOOL "" FORCE)
+    set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
+    set(SDL_TESTS OFF CACHE BOOL "" FORCE)
+
+    add_subdirectory(external/SDL EXCLUDE_FROM_ALL)
     find_package(GLEW REQUIRED)
 
     pkg_check_modules(
@@ -200,7 +193,28 @@ if(UNIX AND NOT APPLE)
 elseif(WIN32)
 
     find_package(PkgConfig REQUIRED)
-    find_package(SDL3 REQUIRED CONFIG)
+    set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+    set(SDL_STATIC ON CACHE BOOL "" FORCE)
+    set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
+    set(SDL_TESTS OFF CACHE BOOL "" FORCE)
+
+    add_subdirectory(external/SDL EXCLUDE_FROM_ALL)
+
+    add_library(GLEW UNKNOWN IMPORTED GLOBAL)
+
+    add_link_options(
+        -static
+        -static-libgcc
+        -static-libstdc++
+    )
+
+    set_target_properties(GLEW PROPERTIES
+        IMPORTED_LOCATION
+            "${CMAKE_BINARY_DIR}/glew/lib/libglew32.a"
+
+        INTERFACE_INCLUDE_DIRECTORIES
+            "${CMAKE_BINARY_DIR}/glew/include"
+    )
 
     if(DEFINED ENV{PKG_CONFIG_PATH})
         message(STATUS
@@ -281,8 +295,18 @@ target_link_libraries(VivianiteRuntime PRIVATE
 # ============================================================
 
 if(BUILD_EDITOR)
-    add_executable(VivianiteEditor
-        src/editor/main.cpp
+    add_executable(VivianiteEditor src/editor/main.cpp)
+
+    if(WIN32)
+        add_custom_command(TARGET VivianiteEditor POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_BINARY_DIR}/glew/lib/glew32.dll"
+            "$<TARGET_FILE_DIR:VivianiteEditor>"
+        )
+    endif()
+
+    target_include_directories(VivianiteEditor PRIVATE
+        "${CMAKE_SOURCE_DIR}/external/SDL/include"
     )
 
     target_sources(VivianiteEditor PRIVATE
@@ -293,117 +317,6 @@ if(BUILD_EDITOR)
         VivianiteEngine
         freetype
         SDL3::SDL3
+        GLEW
     )
-endif()
-
-# ============================================================
-# Compiler options
-# ============================================================
-
-if(MSVC)
-
-    target_compile_options(VivianiteEngine PRIVATE
-        /W4
-    )
-
-    target_compile_options(VivianiteRuntime PRIVATE
-        /W4
-    )
-
-    target_compile_options(VivianiteEditor PRIVATE
-        /W4
-    )
-
-else()
-
-    target_compile_options(VivianiteEngine PRIVATE
-        -Wall
-        -Wextra
-    )
-
-    target_compile_options(VivianiteRuntime PRIVATE
-        -Wall
-        -Wextra
-    )
-
-    if(BUILD_EDITOR)
-        target_compile_options(VivianiteEditor PRIVATE
-            -Wall
-            -Wextra
-        )
-    endif()
-
-endif()
-
-# ============================================================
-# Debug / Release
-# ============================================================
-
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-
-    target_compile_options(VivianiteEngine PRIVATE
-        -O0
-        -g
-    )
-
-    target_compile_definitions(VivianiteEngine PRIVATE
-        DBG
-    )
-
-    target_compile_options(VivianiteRuntime PRIVATE
-        -O0
-        -g
-    )
-
-    target_compile_definitions(VivianiteRuntime PRIVATE
-        DBG
-    )
-
-    target_compile_options(VivianiteEditor PRIVATE
-        -O0
-        -g
-    )
-
-    target_compile_definitions(VivianiteEditor PRIVATE
-        DBG
-    )
-
-elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-
-    target_compile_options(VivianiteEngine PRIVATE
-        -O3
-    )
-
-    target_compile_options(VivianiteRuntime PRIVATE
-        -O3
-    )
-
-    if(BUILD_EDITOR)
-        target_compile_options(VivianiteEditor PRIVATE
-            -O3
-        )
-    endif()
-
-endif()
-
-# ============================================================
-# Windows DLLs
-# ============================================================
-
-if(WIN32)
-
-    add_custom_command(TARGET VivianiteRuntime POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_SOURCE_DIR}/external/openal/OpenAL32.dll"
-        "$<TARGET_FILE_DIR:VivianiteRuntime>"
-    )
-
-    if(BUILD_EDITOR)
-        add_custom_command(TARGET VivianiteEditor POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${CMAKE_SOURCE_DIR}/external/openal/OpenAL32.dll"
-            "$<TARGET_FILE_DIR:VivianiteEditor>"
-        )
-    endif()
-
 endif()

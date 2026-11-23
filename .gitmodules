@@ -13,3 +13,9 @@
 [submodule "external/microui"]
 	path = external/microui
 	url = https://github.com/rxi/microui
+[submodule "external/freetype"]
+	path = external/freetype
+	url = https://gitlab.freedesktop.org/freetype/freetype.git
+[submodule "external/SDL"]
+	path = external/SDL
+	url = https://github.com/libsdl-org/SDL.git
