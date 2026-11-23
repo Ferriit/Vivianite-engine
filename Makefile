@@ -1,5 +1,8 @@
-.PHONY: default runtime runtime_dbg release windows_release all_release debug clean
+.PHONY: default runtime runtime_dbg release windows_release glew_windows all_release debug clean
 MINGW_PREFIX := /ucrt64
+GLEW_DIR := $(CURDIR)/build-windows/glew
+GLEW_SOURCE_DIR := $(CURDIR)/build-windows/glew-source
+GLEW_URL := https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0.tgz
 
 GL_VERSION := 4.6
 
@@ -17,14 +20,27 @@ release: glad clean_bin
 	cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_LTO=ON
 	cmake --build build
 
-windows_release: glad
-	rm -rf build-windows
+glew_windows:
+	rm -rf $(GLEW_SOURCE_DIR) $(GLEW_DIR)
+	mkdir -p build-windows
+	curl -L --fail --retry 3 -o build-windows/glew.tar.gz $(GLEW_URL)
+	tar -xzf build-windows/glew.tar.gz -C build-windows
+	mv build-windows/glew-2.2.0 $(GLEW_SOURCE_DIR)
+	make -C $(GLEW_SOURCE_DIR) SYSTEM=linux-mingw64 -j2
+	make -C $(GLEW_SOURCE_DIR) SYSTEM=linux-mingw64 \
+		GLEW_DEST=$(GLEW_DIR) GLEW_PREFIX=$(GLEW_DIR) install
+	ln -sfn $(CURDIR)/external/freetype/include $(GLEW_DIR)/include/freetype2
+
+windows_release: glad glew_windows
 	cmake -B build-windows -G Ninja \
 		-DCMAKE_BUILD_TYPE=Release \
 		-DCMAKE_TOOLCHAIN_FILE=cmake/mingw-w64.cmake \
-		-DENABLE_LTO=ON \
-		-DBUILD_EDITOR=OFF
-	cmake --build build-windows	
+		-DENABLE_LTO=OFF \
+		-DBUILD_EDITOR=ON \
+		-DCMAKE_C_FLAGS="-DGLEW_STATIC -I$(GLEW_DIR)/include -I$(CURDIR)/external/freetype/include" \
+		-DCMAKE_CXX_FLAGS="-DGLEW_STATIC -I$(GLEW_DIR)/include -I$(CURDIR)/external/freetype/include" \
+		-DCMAKE_EXE_LINKER_FLAGS="-L$(GLEW_DIR)/lib -lglew32"
+	cmake --build build-windows
 	cp /usr/x86_64-w64-mingw32/bin/libstdc++-6.dll build-windows/
 	cp /usr/x86_64-w64-mingw32/bin/libgcc_s_seh-1.dll build-windows/
 	cp /usr/x86_64-w64-mingw32/bin/libwinpthread-1.dll build-windows/

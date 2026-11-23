@@ -140,6 +140,7 @@ if(UNIX AND NOT APPLE)
 endif()
 
 add_subdirectory(external/glfw)
+add_subdirectory(external/freetype EXCLUDE_FROM_ALL)
 
 # ============================================================
 # GLAD
@@ -186,7 +187,6 @@ find_package(OpenGL REQUIRED)
 if(UNIX AND NOT APPLE)
 
     find_package(PkgConfig REQUIRED)
-    find_package(Freetype REQUIRED)
     find_package(SDL3 REQUIRED CONFIG)
     find_package(GLEW REQUIRED)
 
@@ -200,22 +200,13 @@ if(UNIX AND NOT APPLE)
 elseif(WIN32)
 
     find_package(PkgConfig REQUIRED)
-    find_package(Freetype REQUIRED)
     find_package(SDL3 REQUIRED CONFIG)
-    find_package(GLEW REQUIRED)
 
     if(DEFINED ENV{PKG_CONFIG_PATH})
         message(STATUS
             "Windows PKG_CONFIG_PATH: $ENV{PKG_CONFIG_PATH}"
         )
     endif()
-
-    pkg_check_modules(
-        GTKMM
-        REQUIRED
-        IMPORTED_TARGET
-        gtkmm-4.0
-    )
 
 endif()
 
@@ -300,10 +291,8 @@ if(BUILD_EDITOR)
 
     target_link_libraries(VivianiteEditor PRIVATE
         VivianiteEngine
-        PkgConfig::GTKMM
-        Freetype::Freetype
+        freetype
         SDL3::SDL3
-        GLEW::GLEW
     )
 endif()
 
